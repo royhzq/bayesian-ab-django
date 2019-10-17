@@ -1,5 +1,5 @@
 import functools
-from scipy.stats import beta
+import numpy as np
 import random
 from .models import Campaign, Variant
 
@@ -57,4 +57,14 @@ def epsilon_greedy(variant_vals, eps=0.1):
 
 def thompson_sampling(variant_vals):
 
-    return None
+    ''' Thompson sampling
+    '''
+    selected_variant = None
+    best_sample = 0.0
+    for var in variant_vals:
+        sample = np.random.beta(var['conversions'], var['impressions'] - var['conversions'] +1)
+        if sample > best_sample:
+            best_sample = sample
+            selected_variant = var
+
+    return selected_variant
