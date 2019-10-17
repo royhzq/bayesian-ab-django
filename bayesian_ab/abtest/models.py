@@ -27,6 +27,10 @@ class Campaign(models.Model):
         default='',
         help_text='Description of AB test'
     )
+    active = models.BooleanField(
+        default=True,
+        help_text='True if campaign is active'
+    )
 
     def __str__(self):
         return f'AB Test Campaign: {self.code}, {self.name}'

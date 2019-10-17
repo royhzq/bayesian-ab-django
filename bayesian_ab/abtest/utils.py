@@ -27,6 +27,8 @@ def ab_assign(campaign):
         'conversion_rate',
         'html_template',
     )    
+    total_conversions = [ var['conversions'] for var in variants ]
+    total_impressions = [ var['impressions'] for var in variants ]
 
     return None
 
@@ -68,3 +70,26 @@ def thompson_sampling(variant_vals):
             selected_variant = var
 
     return selected_variant
+
+def UCB1(variant_vals):
+
+    ''' Upper Confidence Bound
+    '''
+    selected_variant = None
+    best_score = 0.0
+    total_impressions = sum([ var['impressions'] for var in variant_vals ])
+    for var in variant_vals:
+        score = var['conversion_rate'] + np.sqrt(2*np.log(total_impressions)/var['impressions'])
+        if score > best_score:
+            best_score = score
+            selected_variant = var
+        if score == best_score:
+            # Tie breaker
+            selected_variant = random.sample([var, selected_variant], 1)[0]
+
+    return selected_variant
+
+## Stopping RUle
+# http://www.claudiobellei.com/2017/11/02/bayesian-AB-testing/
+# https://www.chrisstucchio.com/blog/2014/bayesian_ab_decision_rule.html
+# http://www.evanmiller.org/bayesian-ab-testing.html
