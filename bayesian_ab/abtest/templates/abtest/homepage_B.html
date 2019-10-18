@@ -32,6 +32,19 @@ function getCookie (name) {
   }
 }
 
+function factorial(num) {
+  if(num===0){
+    return 1;
+  }
+  else{
+    return num*factorial(num-1);
+  }
+}
+function betaPDF(x, a, b) {
+    beta = (factorial(a-1)*factorial(b-1))/factorial(a+b-1)
+    return (Math.pow(x, a-1)*Math.pow(1-x, b-1))/beta
+}
+
 function submitResponseAB(campaign_code, variant_code, register_impression, register_conversion, params){
 
   params = typeof params !== 'undefined' ? params : {};
@@ -61,5 +74,7 @@ submitResponseAB('{{ campaign.code }}', 'B', true, false)
 if (Math.random() > (1-0.7)) {
     submitResponseAB('{{ campaign.code }}', 'B', false, true)
 }
+
+
 
 </script>
