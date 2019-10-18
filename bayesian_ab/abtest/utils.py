@@ -1,7 +1,7 @@
 import functools
 import numpy as np
 import random
-import scipy
+import scipy.stats
 import json
 from .models import Campaign, Variant
 
@@ -143,3 +143,65 @@ def loss(a, b, c, d):
            np.exp(betaln(c+1,d)-betaln(c,d))*h(a,b,c+1,d)
 
 
+class SimVariant:
+    # Variant object for running simulation
+    def __init__(self, p):
+        self.p = p
+        self.a = 1.0
+        self.b = 1.0
+
+    def simulate(self):
+        # simulate a visit
+        # returns 1 if conversion occurred
+        return random.random() < self.p
+
+    def sample(self):
+        return np.random.beta(self.a, self.b)
+
+    def update(self, x):
+        # x is 1 or 0 for convert / no convert
+        self.a += x
+        self.b += 1-x
+
+
+def experiment(p1, p2, N=1000, algo="uniform", eps=0.2):
+    # Simulate experiment on two versions
+    # Returns array of y values for distributions
+    # At checkpoints N=10, N=20, N=40, ... N=100
+    
+    data = []
+    A = SimVariant(p=p1)
+    B = SimVariant(p=p2)
+
+    for i in range(N):
+
+        if algo == 'uniform':
+            # Random selection
+            selected = random.sample([A,B], 1)[0]
+            selected.update(selected.simulate())
+            
+        if algo == 'thompson':
+            selected = A if A.sample() > B.sample() else B
+            selected.update(selected.simulate())
+            
+        if algo == 'egreedy':
+            # epsilon is default 0.1
+            if random.random() < 0.1:
+                selected = random.sample([A,B], 1)[0]
+                selected.update(selected.simulate())
+            else:
+                selected = A if A.a/(A.a+A.b) > B.a/(B.a+B.b) else B
+                selected.update(selected.simulate())
+
+        if algo == 'UCB1':
+            ucb_score_A = A.a/(A.a+A.b) + np.sqrt(2*np.log(i+1)/(A.a + A.b))
+            ucb_score_B = B.a/(B.a+B.b) + np.sqrt(2*np.log(i+1)/(B.a + B.b))
+            selected = A if ucb_score_A > ucb_score_B else B
+            selected.update(selected.simulate())
+        
+        if (i+1)%200 == 0:
+            y_A = list(scipy.stats.beta.pdf(np.linspace(0,1,500), A.a, A.b))
+            y_B = list(scipy.stats.beta.pdf(np.linspace(0,1,500), B.a, B.b))
+            data.append([y_A, y_B])
+
+    return data

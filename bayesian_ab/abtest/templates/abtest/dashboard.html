@@ -32,18 +32,23 @@
 <body>
 
 </body>
-
+    
 <script>
+
 //setting up empty data array
-var data =betaData(6,14);
-// line chart based on http://bl.ocks.org/mbostock/3883245
+var [max1, data1] =betaData(1,999);
+var [max2, data2] =betaData(999,1);
+var [max3, data3] =betaData(40,800);
+
+console.log(Math.max(data1))
+
 var margin = {
         top: 20,
         right: 20,
         bottom: 30,
         left: 50
     },
-    width = 960 - margin.left - margin.right,
+    width = 800 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
 var x = d3.scaleLinear()
@@ -59,6 +64,7 @@ var line = d3.line()
         return x(d.q);
     })
     .y(function(d) {
+
         return y(d.p);
     });
 
@@ -68,73 +74,93 @@ var svg = d3.select("body").append("svg")
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-x.domain(d3.extent(data, function(d) {
+x.domain(d3.extent(data1, function(d) {
     return d.q;
 }));
-y.domain(d3.extent(data, function(d) {
+y.domain(d3.extent([{"p":0},{"p":30}], function(d) {
     return d.p;
 }));
 
 svg.append("g")
-    .attr("class", "x axis")
+    .attr("class", "x-axis")
     .attr("transform", "translate(0," + height + ")")
     .call(xAxis);
 
 svg.append("g")
-    .attr("class", "y axis")
+    .attr("class", "y-axis")
     .call(yAxis);
 
-svg.append("path")
-    .datum(data)
+var path = svg.append("path")
     .attr("class", "line")
-    .attr("d", line);
+    .attr("id", "A")
+    .attr("d", line(data1));
 
 
-function factorial(num) {
-  if(num===0){
-    return 1;
-  }
-  else{
-    return num*factorial(num-1);
-  }
+animBeta([data1,data2,data3])
+
+function animBeta(dataset) {
+    // Takes in array of data 
+    for(i=1; i< dataset.length; i++) {
+
+        var path = d3.selectAll(".line").transition()
+            .delay(i*500)
+            .duration(500)
+            .attr("class", "line")
+            .attr("id", "A")
+            .attr("d", line(dataset[i]));
+
+    }
+}
+
+function lnBetaFunc(x,y) {
+
+    foo = 0.0;
+
+    for (i=0; i<x-2; i++) {
+        foo += Math.log(x-1-i);
+    }
+    for (i=0; i<y-2; i++) {
+        foo += Math.log(y-1-i);
+    }
+    for (i=0; i<x+y-2; i++) {
+        foo -= Math.log(x+y-1-i);
+    }
+    return foo
 }
 
 function betaFunc(x,y) {
 
-    ans = 0.0;
+    return Math.exp(lnBetaFunc(x,y));
+}
 
-    for (i=0; i<x-2; i++) {
-        ans += Math.log(x-1-i);
-    }
-    for (i=0; i<y-2; i++) {
-        ans += Math.log(y-1-i);
-    }
-    for (i=0; i<x+y-2; i++) {
-        ans -= Math.log(x+y-1-i);
-    }
-    return Math.exp(ans)
+function lnBetaPDF(x, a, b) {
+
+    return ((a-1)*Math.log(x) + (b-1)*Math.log(1-x)) - lnBetaFunc(a,b)
 }
 
 function betaPDF(x, a, b) {
-    numerator = Math.pow(x, a-1)*Math.pow(1-x, b-1)
-    beta = betaFunc(a,b);    
-    console.log("numerator: ", numerator,"beta: ", beta)
-    console.log(('pdf: ',Math.pow(x, a-1)*Math.pow(1-x, b-1))/beta)
-    return (Math.pow(x, a-1)*Math.pow(1-x, b-1))/beta
+    return Math.exp(lnBetaPDF(x, a, b))
 }
 
+
 function betaData(a, b) {
-    data = [];
-    for (var i = 0; i < 1000; i++) {
-        p = betaPDF(i/1000, a, b);
+    data = []
+    max = 0.0;
+    for (var i = 0; i < 500; i++) {
+        p = betaPDF(i/500, a, b);
         el = {
-            "q": i/1000,
+            "q": i/500,
             "p": p
         };
+        if (p >= max) {
+            max = p;
+        }
         data.push(el);
     };
-    return data
+
+    return [max, data]
 }
+
 
 </script>
 

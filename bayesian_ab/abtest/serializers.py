@@ -8,6 +8,15 @@ class ABResponseSerializer(serializers.Serializer):
     register_conversion = serializers.BooleanField()
     params = serializers.JSONField(required=False)
 
+class SimulationSerializer(serializers.Serializer):
+
+    # Serializer for SimulationSerializer
+    p1 = serializers.FloatField(min_value=0.01, max_value=0.99)
+    p2 = serializers.FloatField(min_value=0.01, max_value=0.99)
+    algo = serializers.CharField(max_length=64)
+    eps = serializers.FloatField(min_value=0.01, max_value=0.99, required=False)
+    
+
 # class OrderIDSerializer(serializers.Serializer):
 
 #     order_id = serializers.IntegerField()

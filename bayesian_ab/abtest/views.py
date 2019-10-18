@@ -54,3 +54,13 @@ def clear_stats(request):
         {}
     )
 
+def dashboard(request):
+    ''' For dev only.
+    View dashboard for statistics on ab test
+    '''
+    
+    return render(
+        request,
+        'abtest/dashboard.html',
+        {}
+    )

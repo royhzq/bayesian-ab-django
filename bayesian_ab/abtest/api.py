@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import *
 from .models import Campaign, Variant
+from .utils import SimVariant, experiment
 
 
 class ABResponse(APIView):
@@ -70,6 +71,30 @@ class ABResponse(APIView):
             return Response({'details':'Response registered'})
 
 
+class RunSimulation(APIView):
+
+    def post(self, request, format=None):
+
+        serializer = SimulationSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            
+            p1 = serializer.data.get('p1')
+            p2 = serializer.data.get('p2')
+            algo = serializer.data.get('algo')
+            eps = serializer.data.get('eps', 0.1)
+
+            if algo not in ['uniform', 'thompson', 'egreedy', 'UCB1']:
+                Response({'details':'Invalid algorithm provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+            data = experiment(
+                p1=p1,
+                p2=p2,
+                N=1000,
+                algo=algo,
+                eps=eps,
+            )  
+
+            return Response(data)
 
 
 
