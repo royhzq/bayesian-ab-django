@@ -4,7 +4,14 @@
 {{ testvar }}
 
 {{ campaign }}
+{{ campaign.code }} {{ codetype }}
 {% for v in variants %}
     {{ v }}
     <p>*************</p>
 {% endfor %}
+
+<p>Session Variables</p>
+<p>
+    {{ request.session.items }}
+</p>
+<p>{{ session_key }}</p>

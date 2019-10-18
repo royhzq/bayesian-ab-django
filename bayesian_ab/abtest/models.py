@@ -31,7 +31,10 @@ class Campaign(models.Model):
         default=True,
         help_text='True if campaign is active'
     )
-
+    allow_repeat = models.BooleanField(
+        default=True,
+        help_text='True if repeat impressions/conversions allowed by the same user'
+    )
     def __str__(self):
         return f'AB Test Campaign: {self.code}, {self.name}'
 

@@ -1,5 +1,5 @@
 from django.shortcuts import render
-# from .utils import ab_select
+from .utils import ab_assign
 from .models import Campaign, Variant
 
 def save_new_session(request):
@@ -20,11 +20,17 @@ def homepage(request, *args, **kwargs):
         'conversion_rate',
         'html_template',
     )
-    template = kwargs.get('template', 'abtest/homepage.html')
-    testvar = kwargs.get('testvar','None found')
+    template = ab_assign(
+        request=request,
+        campaign=campaign,
+        default_template='abtest/homepage.html',
+        sticky_session=False,
+        algo='thompson',
+    )
     context = {
-        'testvar':testvar,
         'campaign':campaign,
+        'codetype':type(campaign.code),
+        'session_key':request.session.session_key,
         'variants':variants,
     }
 
@@ -33,3 +39,18 @@ def homepage(request, *args, **kwargs):
         template,
         context
     )
+
+def clear_stats(request):
+    ''' For dev only.
+    Clears all variant impressions / conversions
+    '''
+    Variant.objects.all().update(
+        conversions=0,
+        impressions=0,
+    )
+    return render(
+        request,
+        'abtest/clear_stats.html',
+        {}
+    )
+

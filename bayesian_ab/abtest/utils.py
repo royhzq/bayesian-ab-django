@@ -2,18 +2,10 @@ import functools
 import numpy as np
 import random
 import scipy
+import json
 from .models import Campaign, Variant
 
-# def ab_select(template):
-#     def _decorator(func):
-#         @functools.wrap(func)
-#         def wrapper(*args, **kwargs):
-#             print("Hello World")
-#             return func(testvar="YOOO", *args, **kwargs)
-#         return wrapper
-#     return _decorator()
-
-def ab_assign(request, campaign, default_template, algo='thompson', eps=0.1):
+def ab_assign(request, campaign, default_template, sticky_session=True, algo='thompson', eps=0.1):
 
     ''' Function to assign user a variant based
     on latest updated distribution. Choice of algorithm includes:
@@ -21,11 +13,18 @@ def ab_assign(request, campaign, default_template, algo='thompson', eps=0.1):
         - UCB1 (ucb1)
         - Thompson Sampling (thompson)
     '''
-    if request.session.get(campaign.code):
-        # User already previously assigned
-        # Sticky session - User gets previously assigned template
-        prev_assignment = request.session.get(campaign.code).get('variant')
-        return prev_assignment.get('html_template', default_template)
+    code = str(campaign.code)
+    # Sticky session - User gets previously assigned template
+    if request.session.get(code):
+        if request.session.get(code).get('html_template') and sticky_session:
+           return request.session.get(code).get('html_template', default_template)
+    else:
+        # Register new session variable
+        request.session[code] = {
+            'html_template': '',
+            'i': 1, # Session impressions
+            'c': 0, # Session conversions
+        }
 
     variants = campaign.variants.all().values(
         'code',
@@ -34,17 +33,18 @@ def ab_assign(request, campaign, default_template, algo='thompson', eps=0.1):
         'conversion_rate',
         'html_template',
     ) 
-    # total_conversions = [ var['conversions'] for var in variants ]
-    # total_impressions = [ var['impressions'] for var in variants ]
+
     if algo == 'thompson':
         assigned_variant = thompson_sampling(variants)
     if algo == 'egreedy':
         assigned_variant = epsilon_greedy(variants, eps=eps)
     if algo == 'UCB1':
         assigned_variant = UCB1(variants)
-        
-    # Remember assignment for session
-    request.session[campaign.code] = assigned_variant
+    if algo == 'uniform':
+        assigned_variant = random.sample(list(variants), 1)[0]
+
+    # Record assigned template
+    request.session[code]['html_template'] = assigned_variant['html_template']
     request.session.modified = True
 
     return assigned_variant['html_template']
@@ -57,7 +57,7 @@ def epsilon_greedy(variant_vals, eps=0.1):
 
     if random.random() < eps: 
         # Explore
-        selected_variant = random.sample(variant_vals, 1)[0]
+        selected_variant = random.sample(list(variant_vals), 1)[0]
 
     else:
         # Select best variant
@@ -80,7 +80,7 @@ def thompson_sampling(variant_vals):
     selected_variant = None
     best_sample = 0.0
     for var in variant_vals:
-        sample = np.random.beta(var['conversions'], var['impressions'] - var['conversions'] +1)
+        sample = np.random.beta(var['conversions'] + 1, var['impressions'] - var['conversions'] +1)
         if sample > best_sample:
             best_sample = sample
             selected_variant = var

@@ -1,0 +1,65 @@
+<h1>Homepage B</h1>
+<p>
+    Hello World
+</p>
+{{ testvar }}
+
+{{ campaign }}
+{{ campaign.code }} {{ codetype }}
+<p>*************</p>
+{% for v in variants %}
+    {{ v }}
+    <p>*************</p>
+{% endfor %}
+
+
+<p>Session Variables</p>
+<p>
+    {{ request.session.items }}
+</p>
+<p>{{ session_key }}</p>
+
+<script>
+
+function getCookie (name) {
+  var value = '; ' + document.cookie
+  var parts = value.split('; ' + name + '=')
+  if (parts.length === 2) {
+    return parts
+      .pop()
+      .split(';')
+      .shift()
+  }
+}
+
+function submitResponseAB(campaign_code, variant_code, register_impression, register_conversion, params){
+
+  params = typeof params !== 'undefined' ? params : {};
+  console.log(campaign_code, variant_code, register_impression, register_conversion, params)
+  var xhttp = new XMLHttpRequest()
+  xhttp.onreadystatechange = function () {
+    if (this.readyState === 4 && this.status === 200) {
+      response = JSON.parse(this.response)
+      console.log(response)
+    }
+  }
+  xhttp.open('POST', '/api/experiment/response', true)
+  xhttp.setRequestHeader('Content-Type', 'application/json')
+  xhttp.setRequestHeader('X-CSRFToken', getCookie('csrftoken'))
+  xhttp.send(
+    JSON.stringify({
+      campaign_code : campaign_code,
+      variant_code : variant_code,
+      register_impression : register_impression,
+      register_conversion : register_conversion,
+      params : params,
+    })
+  )
+}
+console.log('Submitting Response')
+submitResponseAB('{{ campaign.code }}', 'B', true, false)
+if (Math.random() > (1-0.7)) {
+    submitResponseAB('{{ campaign.code }}', 'B', false, true)
+}
+
+</script>
