@@ -98,12 +98,26 @@ function factorial(num) {
     return num*factorial(num-1);
   }
 }
+
+function betaFunc(x,y) {
+
+    ans = 0.0;
+
+    for (i=0; i<x-2; i++) {
+        ans += Math.log(x-1-i);
+    }
+    for (i=0; i<y-2; i++) {
+        ans += Math.log(y-1-i);
+    }
+    for (i=0; i<x+y-2; i++) {
+        ans -= Math.log(x+y-1-i);
+    }
+    return Math.exp(ans)
+}
+
 function betaPDF(x, a, b) {
     numerator = Math.pow(x, a-1)*Math.pow(1-x, b-1)
-    beta = (factorial(a-1)*factorial(b-1))/factorial(a+b-1)
-    console.log("fact1: ", factorial(a-1)*factorial(b-1))
-    console.log("fact2: ", factorial(a+b-1))
-    
+    beta = betaFunc(a,b);    
     console.log("numerator: ", numerator,"beta: ", beta)
     console.log(('pdf: ',Math.pow(x, a-1)*Math.pow(1-x, b-1))/beta)
     return (Math.pow(x, a-1)*Math.pow(1-x, b-1))/beta
