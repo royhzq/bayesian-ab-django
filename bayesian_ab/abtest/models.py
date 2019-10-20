@@ -1,4 +1,6 @@
 import uuid
+import numpy as np
+import scipy.stats
 from django.utils import timezone
 from django.db import models
 
@@ -77,6 +79,18 @@ class Variant(models.Model):
         null=True,
         help_text='Path to HTML template for variant View'
     )
+
+    def beta_pdf(self, x_vals):
+        # Get beta distribution values given corresponding X values where 0 < X <1
+        # Where alpha = conversions and beta = impressions - conversions 
+        y_vals = list(scipy.stats.beta.pdf(
+            x_vals, 
+            max(self.conversions,1),
+            max(self.impressions-self.conversions,1)
+            )
+        )
+        return y_vals
+
     def __str__(self):
         return f'Variant: {self.code} | {self.campaign.code} '
 

@@ -52,6 +52,7 @@ class ABResponse(APIView):
                 # The same user/session
                 variant.impressions = variant.impressions + int(register_impression)
                 variant.conversions = variant.conversions + int(register_conversion)
+                variant.conversion_rate = variant.conversions / variant.impressions
                 variant.save()
             else:
                 # Not allowing repeated impressions / conversions
@@ -63,6 +64,9 @@ class ABResponse(APIView):
                     # Add to variant conversions as this is first conversion
                     variant.conversions = variant.conversions + int(register_conversion)
 
+                variant.conversion_rate = variant.conversions / variant.impressions
+                variant.save()
+                
             ## Update session impressions / conversions
             request.session[campaign_code]['i'] = session_impressions + int(register_impression)
             request.session[campaign_code]['c'] = session_conversions + int(register_conversion)

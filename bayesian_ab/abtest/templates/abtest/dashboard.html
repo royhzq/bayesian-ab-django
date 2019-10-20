@@ -1,55 +1,64 @@
-<!DOCTYPE html>
-<html>
+{% extends 'abtest/base.html' %}
+{% block header %}
+    <h1>Bayesian AB Testing Dashboard</h1>
+{% endblock %}
+{% block content %}
+<h1>Campaign: {{ campaign.name }}</h1>
+<div id="canvas">
+    <h2>Beta Distributions of variants</h2>
+</div>
+<div class="center" id="legend">
+</div>
+<p>
+    Last Update: {{ last_update }} | <a href="/dashboard">Refresh</a>
+</p>
+<hr>
+<div class="center">
+<p><strong>
+    <a href="/">Click Here</a> to visit the test page to add to impressions / conversions
+</strong><br>
+</p>
+</div>
+<div class= "center"
+<p>Thompson Sampling algorithm used to determine variant assigned</p>
+</div>
+<hr>
+<div class="center">
+    <table>
+        <tr>
+            <td><strong>Variant</strong></td>
+            <td><strong>Impressions</strong></td>
+            <td><strong>Conversions</strong></td>
+            <td><strong>Conversion Rate</strong> </td>
+        </tr>
+        {% for variant in variant_vals %}
+        <tr>
+            <td>{{ variant.code }}</td>
+            <td>{{ variant.impressions }}</td>
+            <td>{{ variant.conversions }}</td>
+            <td>{{ variant.conversion_rate|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
 
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Normal Plot</title>
-    <meta name="description" content="">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.min.js"></script>
-    <!-- <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script> -->
-    <style type="text/css">
-    body {
-        font: 10px sans-serif;
-    }
-    .axis path,
-    .axis line {
-        fill: none;
-        stroke: #000;
-        shape-rendering: crispEdges;
-    }
-    /*.x.axis path {
-        display: none;
-    }*/
-    .line {
-        fill: none;
-        stroke: steelblue;
-        stroke-width: 1.5px;
-    }
-    </style>
-</head>
-
-<body>
+    </table>    
+</div>
 
 </body>
-    
+
+{{ variant_vals|json_script:"dataset" }}
+
 <script>
-
-//setting up empty data array
-var [max1, data1] =betaData(1,999);
-var [max2, data2] =betaData(999,1);
-var [max3, data3] =betaData(40,800);
-
-console.log(Math.max(data1))
+var x_vals = {{ x_vals }}
+var dataset = JSON.parse(document.getElementById('dataset').textContent);
 
 var margin = {
-        top: 20,
+        top: 10,
         right: 20,
         bottom: 30,
-        left: 50
+        left: 25
     },
-    width = 800 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
+    width = document.getElementById("canvas").offsetWidth - margin.left - margin.right,
+    height = 300 - margin.top - margin.bottom;
 
 var x = d3.scaleLinear()
     .range([0, width]);
@@ -61,25 +70,25 @@ var xAxis = d3.axisBottom(x);
 var yAxis = d3.axisLeft(y);
 var line = d3.line()
     .x(function(d) {
-        return x(d.q);
+        return x(d[0]);
     })
     .y(function(d) {
 
-        return y(d.p);
+        return y(d[1]);
     });
 
-var svg = d3.select("body").append("svg")
+var svg = d3.select("#canvas").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-x.domain(d3.extent(data1, function(d) {
-    return d.q;
+x.domain(d3.extent(x_vals, function(d) {
+    return d;
 }));
-y.domain(d3.extent([{"p":0},{"p":30}], function(d) {
-    return d.p;
-}));
+y.domain([0, {{ max_y }} ]);
+
+var color = d3.scaleOrdinal(d3.schemeCategory10);
 
 svg.append("g")
     .attr("class", "x-axis")
@@ -90,27 +99,56 @@ svg.append("g")
     .attr("class", "y-axis")
     .call(yAxis);
 
-var path = svg.append("path")
-    .attr("class", "line")
-    .attr("id", "A")
-    .attr("d", line(data1));
+var color = [
+    '#66c2a5',
+    '#fc8d62',
+    '#8da0cb',
+    '#e78ac3',
+    '#a6d854',
+]
 
 
-animBeta([data1,data2,data3])
+// var path = svg.append("path")
+//     .attr("class", "line")
+//     .attr("id", "A")
+//     .attr("d", line(data1));
 
-function animBeta(dataset) {
-    // Takes in array of data 
-    for(i=1; i< dataset.length; i++) {
+// var path = svg.append("path")
+//     .attr("class", "line")
+//     .attr("id", "A")
+//     .attr("d", line(data2));
 
-        var path = d3.selectAll(".line").transition()
-            .delay(i*500)
-            .duration(500)
-            .attr("class", "line")
-            .attr("id", "A")
-            .attr("d", line(dataset[i]));
+// var path = svg.append("path")
+//     .attr("class", "line")
+//     .attr("id", "A")
+//     .attr("d", line(data3));
 
-    }
-}
+dataset.forEach(function(d, i) {
+    svg.append("path")
+        .attr("class", "line")
+        .attr("id", d.code)
+        .attr("d", line(d.xy))
+        .style("stroke", color[i])
+
+    legend = document.getElementById('legend');
+    legend.innerHTML += '<div><span class="emdash" style="color:'+d.color+'">&#8213;&nbsp;</span>' + d.code+ '&nbsp;&nbsp;</div>';
+});
+
+// animBeta([data1,data2,data3])
+
+// function animBeta(dataset) {
+//     // Takes in array of data 
+//     for(i=1; i< dataset.length; i++) {
+
+//         var path = d3.selectAll(".line").transition()
+//             .delay(i*500)
+//             .duration(500)
+//             .attr("class", "line")
+//             .attr("id", "A")
+//             .attr("d", line(dataset[i]));
+
+//     }
+// }
 
 function lnBetaFunc(x,y) {
 
@@ -163,5 +201,4 @@ function betaData(a, b) {
 
 
 </script>
-
-</html>
+{% endblock %}
