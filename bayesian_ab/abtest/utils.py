@@ -81,7 +81,7 @@ def thompson_sampling(variant_vals):
     selected_variant = None
     best_sample = 0.0
     for var in variant_vals:
-        sample = np.random.beta(var['conversions'] + 1, var['impressions'] - var['conversions'] +1)
+        sample = np.random.beta(max(var['conversions'],1), max(var['impressions'] - var['conversions'],1))
         if sample > best_sample:
             best_sample = sample
             selected_variant = var

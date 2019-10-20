@@ -17,15 +17,26 @@
 </p>
 <hr>
 <div class="center">
-<p><strong>
+<h3><strong>
     <a href="/">Click Here</a> to visit the test page to add to impressions / conversions
 </strong><br>
-</p>
+</h3>
 </div>
 <div class= "center">
 <p>Thompson Sampling algorithm used to determine variant assigned</p>
 </div>
 <hr>
+<h3>Simulate Page Visits</h3>
+<p>Instead of visiting the page yourself and clicking for conversions, you may simulate users visiting the page by clicking the buttons below.</p>
+<p>
+The "true" conversion rate for each variant is already fixed and simulating enough page visits will cause the distribution means to converge to the predetermined conversion rates.</p>
+<div class="center">
+    <button class="sim-5">Simulate <br> +5 Page Visits</button> &nbsp;&nbsp;
+    <button class="sim-5">Simulate <br> +10 Page Visits</button>
+</div>
+<br>
+<hr>
+<h3>Summary Of A/B/C Test Results</h3>
 <div class="center">
     <table>
         <tr>
@@ -85,6 +96,10 @@
         </tr>
     </table>    
 </div>
+
+<hr>
+<h3>Reset</h3>
+<p>To reset impressions and conversions for all variants, <a href="/clear_stats">click here</a></p>
 </body>
 
 {{ variant_vals|json_script:"dataset" }}

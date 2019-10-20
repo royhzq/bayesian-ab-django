@@ -18,7 +18,7 @@
     To register a <em>Conversion</em>, click the Add To Cart button below. Doing so will increment conversions for this version by +1 and refresh this page. This is to simulate the metric which we are trying to increase, or test for. In this case, we are measuring to see which version of the page will result in more <i>Add To Cart</i> events.
 </p>
 <div class="center">
-  <button class="add-to-cart" onclick="addToCart();">Add To Cart <br> (+1 Conversion)</button>
+  <button class="add-to-cart" onclick="this.disabled=true;addToCart();">Add To Cart <br> (+1 Conversion)</button>
 </div>
 <div class="center">
     <a href="/">Reload Page</a>
@@ -87,6 +87,7 @@ function submitResponseAB(campaign_code, variant_code, register_impression, regi
   )
 }
 function addToCart() {
+    
     submitResponseAB('{{ campaign.code }}', 'A', false, true);
     window.location.href = "/";
 }
