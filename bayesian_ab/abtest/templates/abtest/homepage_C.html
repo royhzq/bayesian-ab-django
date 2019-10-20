@@ -1,23 +1,55 @@
-<h1>Homepage C</h1>
+{% extends 'abtest/base.html' %}
+{% block header %}
+<header style="background-color: #8da0cb">
+  <h1>Displaying Version C</h1>
+</header>
+{% endblock %}
+{% block content %}
+<h3>You are being served version C of the page undergoing A/B/C testing </h3>
 <p>
-    Hello World
+    This is a demonstration of how Bayesian A/B testing works using Django. This page can be replaced by any View that you may want to test in your application.
 </p>
-{{ testvar }}
 
-{{ campaign }}
-{{ campaign.code }} {{ codetype }}
-<p>*************</p>
-{% for v in variants %}
-    {{ v }}
-    <p>*************</p>
-{% endfor %}
-
-<p>Session Variables</p>
 <p>
-    {{ request.session.items }}
+    If you see this page, an <em>Impression</em> has been registered. You may <a href="/">reload</a> this page 
+    to let the algorithm assign you a different (or possibly the same) version.
 </p>
-<p>{{ session_key }}</p>
-
+<p>
+    To register a <em>Conversion</em>, click the Add To Cart button below. Doing so will increment conversions for this version by +1 and refresh this page. This is to simulate the metric which we are trying to increase, or test for. In this case, we are measuring to see which version of the page will result in more <i>Add To Cart</i> events.
+</p>
+<div class="center">
+  <button class="add-to-cart" onclick="addToCart();">Add To Cart <br> (+1 Conversion)</button>
+</div>
+<div class="center">
+    <a href="/">Reload Page</a>
+</div>
+<p>
+    <strong>Dashboard</strong> - To see an overview of the Bayesian A/B testing results for this experiment. <a href="/dashboard">Click Here</a>
+</p>
+<p>
+  This version was served to you using the <strong>Thompson Sampling</strong> algorithm and currently has:  
+</p>
+<ul>
+    <li><strong>{{ assigned_variant.impressions }}</strong> Impressions</li>
+    <li><strong>{{ assigned_variant.conversions }}</strong> Conversions</li>
+    <li><strong>{{ assigned_variant.conversion_rate|floatformat:3 }}</strong> Conversion Rate</li>
+</ul>
+<p>
+    As this is a demonstration of A/B testing. Do take note of the following:    
+</p>
+<ul>
+    <li>
+        <strong>Sticky Sessions</strong> is turned off. That means that this test does not remember the previous version that was assigned to your page request, allowing you to possibly see different versions as you refresh the page. By default, sticky sessions is turned on.
+    </li>
+    <br>
+    <li>
+        The same user / session can generate repeated impressions and conversions in this demonstration. However in some situations, you may want to count only unique impressions and conversions. This can be toggled in <i>ab_assign</i> function. By default, non-unique impressions and conversions are registered.
+    </li>
+</ul>
+<hr>
+<p>A/B Test Campaign ID: {{ campaign.code }}</p>
+<p>User Session Key: {{ session_key }}</p>
+<br>
 <script>
 
 function getCookie (name) {
@@ -30,7 +62,6 @@ function getCookie (name) {
       .shift()
   }
 }
-
 function submitResponseAB(campaign_code, variant_code, register_impression, register_conversion, params){
 
   params = typeof params !== 'undefined' ? params : {};
@@ -55,9 +86,18 @@ function submitResponseAB(campaign_code, variant_code, register_impression, regi
     })
   )
 }
+function addToCart() {
+    submitResponseAB('{{ campaign.code }}', 'C', false, true);
+    window.location.href = "/";
+}
+
 console.log('Submitting Response')
 submitResponseAB('{{ campaign.code }}', 'C', true, false)
-if (Math.random() > (1-0.1)) {
-    submitResponseAB('{{ campaign.code }}', 'C', false, true)
-}
+
 </script>
+{% endblock %}
+{% block footer %}
+<footer style="background-color: #8da0cb">
+  <h1>&nbsp;</h1>
+</footer>
+{% endblock %}

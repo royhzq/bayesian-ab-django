@@ -22,6 +22,9 @@
         header {
             padding: 10px 10px 10px 10px;
         }
+        footer {
+            padding: 10px 10px 10px 10px;
+        }
         table {
           border-collapse: collapse;
         }
@@ -30,6 +33,10 @@
           padding: 10px;
           text-align: center;
           border: 1px solid black;
+        }
+        .add-to-cart {
+            padding: 10px;
+            cursor: pointer;
         }
         .container {
             max-width: 600px;
@@ -75,9 +82,11 @@
 
         {% endblock %}
         </main>
+        {% block footer %}
         <footer>
 
         </footer>
+        {% endblock %}
     </div>
 
 </body>

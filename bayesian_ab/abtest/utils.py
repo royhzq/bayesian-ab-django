@@ -48,7 +48,7 @@ def ab_assign(request, campaign, default_template, sticky_session=True, algo='th
     request.session[code]['html_template'] = assigned_variant['html_template']
     request.session.modified = True
 
-    return assigned_variant['html_template']
+    return assigned_variant
 
 def epsilon_greedy(variant_vals, eps=0.1):
 

@@ -17,25 +17,26 @@ def homepage(request, *args, **kwargs):
     ''' 
     save_new_session(request) # Ensure session exists 
     campaign = Campaign.objects.get(name="Test Homepage")
-    variants = campaign.variants.all().values(
-        'code',
-        "impressions",
-        'conversions',
-        'conversion_rate',
-        'html_template',
-    )
-    template = ab_assign(
+    # variants = campaign.variants.all().values(
+    #     'code',
+    #     "impressions",
+    #     'conversions',
+    #     'conversion_rate',
+    #     'html_template',
+    # )
+    assigned_variant = ab_assign(
         request=request,
         campaign=campaign,
         default_template='abtest/homepage.html',
         sticky_session=False,
         algo='thompson',
     )
+    template = assigned_variant['html_template']
     context = {
         'campaign':campaign,
         'codetype':type(campaign.code),
         'session_key':request.session.session_key,
-        'variants':variants,
+        'assigned_variant':assigned_variant,
     }
 
     return render(
