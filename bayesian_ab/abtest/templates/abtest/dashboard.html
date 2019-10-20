@@ -1,6 +1,9 @@
 {% extends 'abtest/base.html' %}
 {% block header %}
+<header style="padding:0">
     <h1>Bayesian AB Testing Dashboard</h1>
+    <hr>
+</header>
 {% endblock %}
 {% block content %}
 <h1>Campaign: {{ campaign.name }}</h1>
@@ -26,6 +29,12 @@
 <div class="center">
     <table>
         <tr>
+            <td colspan="4" style="text-align: left; font-weight:800">
+            Summary of Impressions/Conversions
+            </td>
+        </tr>
+
+        <tr>
             <td><strong>Variant</strong></td>
             <td><strong>Impressions</strong></td>
             <td><strong>Conversions</strong></td>
@@ -39,10 +48,43 @@
             <td>{{ variant.conversion_rate|floatformat:2 }}</td>
         </tr>
         {% endfor %}
-
     </table>    
 </div>
-
+<br>
+<div class="center" >
+    <table style="max-width:400px">
+        <tr>
+            <td colspan="4" style="text-align: left; font-weight:800">
+            Probability of conversion rate for Variant X (row) greater than
+            Variant Y (col) 
+            </td>
+        </tr>
+        <tr>
+            <td><strong>P(X>Y)</strong></td>
+            <td><strong>A</strong></td>
+            <td><strong>B</strong></td>
+            <td><strong>C</strong></td>
+        </tr>
+        <tr>
+            <td><strong>A</strong></td>
+            <td>-</td>
+            <td>{{ h_ab|floatformat:3 }}</td>
+            <td>{{ h_ac|floatformat:3 }}</td>
+        </tr>
+        <tr>
+            <td><strong>B</strong></td>
+            <td>{{ h_ba|floatformat:3 }}</td>
+            <td>-</td>
+            <td>{{ h_bc|floatformat:3 }}</td>
+        </tr>
+        <tr>
+            <td><strong>C</strong></td>
+            <td>{{ h_ca|floatformat:3 }}</td>
+            <td>{{ h_cb|floatformat:3 }}</td>
+            <td>-</td>
+        </tr>
+    </table>    
+</div>
 </body>
 
 {{ variant_vals|json_script:"dataset" }}

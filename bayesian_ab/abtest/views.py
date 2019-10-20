@@ -1,5 +1,5 @@
-from django.shortcuts import render
-from .utils import ab_assign
+from django.shortcuts import render, redirect
+from .utils import ab_assign, loss, h
 from .models import Campaign, Variant
 from django.conf import settings
 import numpy as np
@@ -52,17 +52,13 @@ def clear_stats(request):
         conversions=0,
         impressions=0,
     )
-    return render(
-        request,
-        'abtest/clear_stats.html',
-        {}
-    )
+    return redirect(dashboard)
 
 def dashboard(request):
     ''' Demonstration dashboard for statistics on ab test
     '''
     campaign = Campaign.objects.get(name="Test Homepage")
-    variant_vals = list(campaign.variants.all().order_by('id').values(
+    variant_vals = list(campaign.variants.all().order_by('code').values(
         'code',
         'impressions',
         'conversions',
@@ -72,19 +68,47 @@ def dashboard(request):
     x_vals = list(np.linspace(0,1,500))
     xy_vals = []
     max_y = 0
-    for i, variant in enumerate(campaign.variants.all().order_by('id')):
+    for i, variant in enumerate(campaign.variants.all().order_by('code')):
         y_vals = variant.beta_pdf(x_vals)
         variant_vals[i]['xy'] = list(zip(x_vals, y_vals))
         variant_vals[i]['color'] = settings.COLOUR_PALETTE[i%len(settings.COLOUR_PALETTE)]
         if max(y_vals) > max_y:
             max_y = max(y_vals)
 
+    h_ab = loss(
+        variant_vals[0]['conversions'], 
+        variant_vals[0]['impressions'] - variant_vals[0]['conversions'],
+        variant_vals[1]['conversions'], 
+        variant_vals[1]['impressions'] - variant_vals[1]['conversions']
+    )
+    h_ac = loss(
+        variant_vals[0]['conversions'], 
+        variant_vals[0]['impressions'] - variant_vals[0]['conversions'],
+        variant_vals[2]['conversions'], 
+        variant_vals[2]['impressions'] - variant_vals[2]['conversions']
+    )
+    h_ba = 1 - h_ab
+    h_bc = loss(
+        variant_vals[1]['conversions'], 
+        variant_vals[1]['impressions'] - variant_vals[1]['conversions'],
+        variant_vals[2]['conversions'], 
+        variant_vals[2]['impressions'] - variant_vals[2]['conversions']
+    )
+    h_ca = 1 - h_ac
+    h_cb = 1 - h_bc
+
     context = {
         'campaign':campaign,
         'variant_vals':variant_vals,
         'x_vals': json.dumps(x_vals),
         'max_y':max_y,
-        'last_update': datetime.datetime.utcnow().strftime('%Y-%m-%d | %H:%M:%S') 
+        'h_ab':h_ab,
+        'h_ac':h_ac,
+        'h_ba':h_ba,
+        'h_bc':h_bc,
+        'h_ca':h_ca,
+        'h_cb':h_cb,
+        'last_update': datetime.datetime.utcnow().strftime('%Y-%m-%d | %H:%M:%S')
     }
     return render(
         request,

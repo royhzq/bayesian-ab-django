@@ -4,6 +4,7 @@ import random
 import scipy.stats
 import json
 from .models import Campaign, Variant
+from scipy.special import betaln
 
 def ab_assign(request, campaign, default_template, sticky_session=True, algo='thompson', eps=0.1):
 

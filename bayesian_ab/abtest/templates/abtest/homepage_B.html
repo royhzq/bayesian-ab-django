@@ -1,7 +1,35 @@
-<h1>Homepage B</h1>
+{% extends 'abtest/base.html' %}
+{% block header %}
+<header style="background-color: #fc8d62">
+  <h1>Displaying Version B</h1>
+</header>
+{% endblock %}
+{% block content %}
+<h3>You are being served version B of the page undergoing A/B/C testing </h3>
 <p>
-    Hello World
+    This is a demonstration of how Bayesian A/B testing works using Django. This page can be replaced by any View that you may want to test in your application.
 </p>
+
+<p>
+    If you see this page, an <em>Impression</em> has been registered. You may <a href="/">reload</a> this page 
+    to let the algorithm assign you a different (or possibly the same) version.
+</p>
+<p>
+  This version of the page currently has:  
+</p>
+<ul>
+    <li>xx Impressions</li>
+    <li>xx Conversions</li>
+    <li>0.xx Conversion Rate</li>
+</ul>
+<p>
+    As this is a demonstration of A/B testing. Do take note of the following:    
+</p>
+<ul>
+    <li>
+        <strong>Sticky Sessions</strong> is turned off. That means that this test does not remember the previous version that was assigned to your page request, allowing you to possibly see different versions as you refresh the page. By default, sticky sessions is turned on.
+    </li>
+</ul>
 {{ testvar }}
 
 {{ campaign }}
@@ -78,3 +106,4 @@ if (Math.random() > (1-0.7)) {
 
 
 </script>
+{% endblock %}
