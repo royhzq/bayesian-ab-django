@@ -236,6 +236,7 @@ class SimulationTests(TestCase):
             data = experiment(
                 p1=0.5,
                 p2=0.55,
+                p3=0.66,
                 N=1000,
             )
             if len(data) != 1000/200:

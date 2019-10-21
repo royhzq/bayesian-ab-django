@@ -10,19 +10,19 @@
 <div id="canvas">
     <h2>Beta Posterior Probability Distribution of Variants</h2>
 </div>
-<div class="center" id="legend">
-</div>
+<div class="center" id="legend"></div>
+<div class="center"><input id="rangeSlider" class="slider" type="range" min="1" max="6" value="1"></div>
 {{ dataset|json_script:"dataset"|safe }}
 <script>
 
 var dataset = JSON.parse(JSON.parse(document.getElementById('dataset').textContent));
-var data1 = dataset[1] 
-var data2 = dataset[2] 
-var data3 = dataset[3] 
-var data4 = dataset[4] 
-var data5 = dataset[5]
+var data1 = dataset[0] 
+var data2 = dataset[1] 
+var data3 = dataset[2] 
+var data4 = dataset[3] 
+var data5 = dataset[4]
+var data6 = dataset[5]
 
-console.log(dataset[0])
 var margin = {
         top: 10,
         right: 20,
@@ -39,7 +39,7 @@ var y = d3.scaleLinear()
     .range([height, 0]);
 
 var xAxis = d3.axisBottom(x);
-var yAxis = d3.axisLeft(y);
+var yAxis = d3.axisLeft(y).tickSizeOuter(3);
 var line = d3.line()
     .x(function(d) {
         return x(d[0]);
@@ -58,7 +58,7 @@ var svg = d3.select("#canvas").append("svg")
 x.domain(d3.extent(dataset[0].x_vals, function(d) {
     return d;
 }));
-y.domain([0, data1.max_y]);
+y.domain([0, data5.max_y]);
 
 var color = d3.scaleOrdinal(d3.schemeCategory10);
 
@@ -81,15 +81,80 @@ var color = [
 
 svg.append("path")
     .attr("class", "line")
-    .attr("d", line(data1.xy_A))
+    .attr("id", "A")
+    .attr("d", line(data5.xy_A))
     .style("stroke", color[0])
 
 svg.append("path")
     .attr("class", "line")
-    .attr("d", line(data1.xy_B))
+    .attr("id", "B")
+    .attr("d", line(data5.xy_B))
     .style("stroke", color[1])
 
+svg.append("path")
+    .attr("class", "line")
+    .attr("id", "C")
+    .attr("d", line(data5.xy_C))
+    .style("stroke", color[2])
+
 legend = document.getElementById('legend');
+legend.innerHTML += '<div><span class="emdash" style="color:'+color[0]+'">&#8213;&nbsp;</span>A&nbsp;&nbsp;</div>';
+legend.innerHTML += '<div><span class="emdash" style="color:'+color[1]+'">&#8213;&nbsp;</span>B&nbsp;&nbsp;</div>';
+legend.innerHTML += '<div><span class="emdash" style="color:'+color[2]+'">&#8213;&nbsp;</span>C&nbsp;&nbsp;</div>';
+
+document.getElementById("rangeSlider").addEventListener("click", function(){
+    this.disabled=true;
+    updatePosterior(dataset[this.value-1]);
+    this.disabled = false;
+});
+document.getElementById("rangeSlider").value = 6;
+
+
+
+function updatePosterior(data) {
+
+    var line = d3.line()
+        .x(function(d) {
+            return x(d[0]);
+        })
+        .y(function(d) {
+
+            return y(d[1]);
+        });
+
+    var y = d3.scaleLinear()
+        .range([height, 0]);
+    y.domain([0, data.max_y]);
+    var yAxis = d3.axisLeft(y).tickSizeOuter(3);
+    var y_axis = d3.selectAll('.y-axis')
+        .transition()
+        .duration(100)
+        .attr("class", "y-axis")
+        .call(yAxis);
+
+    var path_A = d3.selectAll("#A")
+        .transition()
+        .duration(500)
+        .attr("class", "line")
+        .attr("id", "A")
+        .attr("d", line(data.xy_A));
+
+    var path_B = d3.selectAll("#B")
+        .transition()
+        .duration(500)
+        .attr("class", "line")
+        .attr("id", "B")
+        .attr("d", line(data.xy_B));
+    
+    var path_C = d3.selectAll("#C")
+        .transition()
+        .duration(500)
+        .attr("class", "line")
+        .attr("id", "C")
+        .attr("d", line(data.xy_C));
+
+
+}
 // legend.innerHTML += '<div><span class="emdash" style="color:'+d.color+'">&#8213;&nbsp;</span>' + d.code+ '&nbsp;&nbsp;</div>';
 
 
@@ -118,14 +183,13 @@ function getCookie (name) {
       .shift()
   }
 }
-function runSimulation(p1, p2, algo) {
+function runSimulation(p1, p2, p3, algo) {
 
   var xhttp = new XMLHttpRequest()
   xhttp.onreadystatechange = function () {
     if (this.readyState === 4 && this.status === 200) {
-      response = JSON.parse(this.response)
-      console.log(response)
-      return response
+      dataset = JSON.parse(this.response)
+      console.log(dataset)
     }
   }
   xhttp.open('POST', '/api/experiment/simulation', true)
@@ -135,11 +199,12 @@ function runSimulation(p1, p2, algo) {
     JSON.stringify({
         p1:p1,
         p2:p2,
+        p3:p3,
         algo:algo,
     })
   )
 }
-runSimulation(p1=0.5,p2=0.5, algo='uniform')
+// runSimulation(p1=0.5,p2=0.5,p3=0.66, algo='uniform')
 </script>
 
 {% endblock %}

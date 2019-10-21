@@ -133,9 +133,10 @@ def simulation(request):
 
     dataset = experiment(
         p1=0.5, 
-        p2=0.5, 
-        N=1000, 
-        algo="uniform", 
+        p2=0.5,
+        p3=0.5,
+        N=10000, 
+        algo="thompson", 
     )
     context = {
         'dataset':json.dumps(dataset)

@@ -134,6 +134,7 @@ class RunSimulation(APIView):
             
             p1 = serializer.data.get('p1')
             p2 = serializer.data.get('p2')
+            p3 = serializer.data.get('p3')
             algo = serializer.data.get('algo')
             eps = serializer.data.get('eps', 0.1)
 
@@ -145,7 +146,8 @@ class RunSimulation(APIView):
             data = experiment(
                 p1=p1,
                 p2=p2,
-                N=1000,
+                p3=p3,
+                N=10000,
                 algo=algo,
                 eps=eps,
             )  
