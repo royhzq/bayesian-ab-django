@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from .utils import ab_assign, loss, h
+from .utils import ab_assign, h, sim_page_visits
 from .models import Campaign, Variant
 from django.conf import settings
 import numpy as np
@@ -11,19 +11,11 @@ def save_new_session(request):
         request.session.save()
 
 def homepage(request, *args, **kwargs):
-
     ''' Homepage view where we test different versions
     of the html template
     ''' 
     save_new_session(request) # Ensure session exists 
     campaign = Campaign.objects.get(name="Test Homepage")
-    # variants = campaign.variants.all().values(
-    #     'code',
-    #     "impressions",
-    #     'conversions',
-    #     'conversion_rate',
-    #     'html_template',
-    # )
     assigned_variant = ab_assign(
         request=request,
         campaign=campaign,
@@ -38,22 +30,13 @@ def homepage(request, *args, **kwargs):
         'session_key':request.session.session_key,
         'assigned_variant':assigned_variant,
     }
-
     return render(
         request,
         template,
         context
     )
 
-def clear_stats(request):
-    ''' For dev only.
-    Clears all variant impressions / conversions
-    '''
-    Variant.objects.all().update(
-        conversions=0,
-        impressions=0,
-    )
-    return redirect(dashboard)
+
 
 def dashboard(request):
     ''' Demonstration dashboard for statistics on ab test
@@ -76,27 +59,45 @@ def dashboard(request):
         if max(y_vals) > max_y:
             max_y = max(y_vals)
 
-    h_ab = loss(
+    # Calculate pairwise probability of variant X conversion rate
+    # greater than variant Y conversion rate
+
+    h_ab = h(
         variant_vals[0]['conversions'], 
         variant_vals[0]['impressions'] - variant_vals[0]['conversions'],
         variant_vals[1]['conversions'], 
         variant_vals[1]['impressions'] - variant_vals[1]['conversions']
     )
-    h_ac = loss(
+    h_ac = h(
         variant_vals[0]['conversions'], 
         variant_vals[0]['impressions'] - variant_vals[0]['conversions'],
         variant_vals[2]['conversions'], 
         variant_vals[2]['impressions'] - variant_vals[2]['conversions']
     )
-    h_ba = 1 - h_ab
-    h_bc = loss(
+    h_ba = h(
+        variant_vals[1]['conversions'], 
+        variant_vals[1]['impressions'] - variant_vals[1]['conversions'],
+        variant_vals[0]['conversions'], 
+        variant_vals[0]['impressions'] - variant_vals[0]['conversions']
+    )
+    h_bc = h(
         variant_vals[1]['conversions'], 
         variant_vals[1]['impressions'] - variant_vals[1]['conversions'],
         variant_vals[2]['conversions'], 
         variant_vals[2]['impressions'] - variant_vals[2]['conversions']
     )
-    h_ca = 1 - h_ac
-    h_cb = 1 - h_bc
+    h_ca = h(
+        variant_vals[2]['conversions'], 
+        variant_vals[2]['impressions'] - variant_vals[2]['conversions'],
+        variant_vals[0]['conversions'], 
+        variant_vals[0]['impressions'] - variant_vals[0]['conversions']
+    )
+    h_cb = h(
+        variant_vals[2]['conversions'], 
+        variant_vals[2]['impressions'] - variant_vals[2]['conversions'],
+        variant_vals[1]['conversions'], 
+        variant_vals[1]['impressions'] - variant_vals[1]['conversions']
+    )
 
     context = {
         'campaign':campaign,
@@ -116,3 +117,15 @@ def dashboard(request):
         'abtest/dashboard.html',
         context
     )
+
+def clear_stats(request):
+    ''' For demonstration purposes only.
+    Clears all variant impressions / conversions
+    '''
+    Variant.objects.all().update(
+        conversions=0,
+        impressions=0,
+        conversion_rate=0.0,
+    )
+    return redirect(dashboard)
+

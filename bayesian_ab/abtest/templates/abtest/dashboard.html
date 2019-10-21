@@ -1,7 +1,7 @@
 {% extends 'abtest/base.html' %}
 {% block header %}
 <header style="padding:0">
-    <h1>Bayesian AB Testing Dashboard</h1>
+    <h1>Bayesian A/B Testing Dashboard</h1>
     <hr>
 </header>
 {% endblock %}
@@ -31,8 +31,8 @@
 <p>
 The "true" conversion rate for each variant is already fixed and simulating enough page visits will cause the distribution means to converge to the predetermined conversion rates.</p>
 <div class="center">
-    <button class="sim-5">Simulate <br> +5 Page Visits</button> &nbsp;&nbsp;
-    <button class="sim-5">Simulate <br> +10 Page Visits</button>
+    <button id="sim-5">Simulate <br> +5 Page Visits</button> &nbsp;&nbsp;
+    <button id="sim-10">Simulate <br> +10 Page Visits</button>
 </div>
 <br>
 <hr>
@@ -191,6 +191,34 @@ dataset.forEach(function(d, i) {
     legend.innerHTML += '<div><span class="emdash" style="color:'+d.color+'">&#8213;&nbsp;</span>' + d.code+ '&nbsp;&nbsp;</div>';
 });
 
+document.getElementById("sim-5").addEventListener("click", function(){
+    this.disabled=true;
+    simPageVisits(
+        campaign_code="{{ campaign.code }}",
+        n=5,
+        conversion_rates = {
+            'A':0.45,
+            'B':0.75,
+            'C':0.67
+        },
+        algo='thompson'
+    );
+    window.location.href = "/dashboard";
+});
+document.getElementById("sim-10").addEventListener("click", function(){
+    this.disabled=true;
+    simPageVisits(
+        campaign_code="{{ campaign.code }}",
+        n=10,
+        conversion_rates = {
+            'A':0.45,
+            'B':0.75,
+            'C':0.67
+        },
+        algo='thompson'
+    );
+    window.location.href = "/dashboard";
+});
 // animBeta([data1,data2,data3])
 
 // function animBeta(dataset) {
@@ -206,6 +234,39 @@ dataset.forEach(function(d, i) {
 
 //     }
 // }
+function getCookie (name) {
+  var value = '; ' + document.cookie
+  var parts = value.split('; ' + name + '=')
+  if (parts.length === 2) {
+    return parts
+      .pop()
+      .split(';')
+      .shift()
+  }
+}
+function simPageVisits(campaign_code, n, conversion_rates, algo) {
+
+  conversion_rates = typeof conversion_rates !== 'undefined' ? conversion_rates : {};
+  console.log(campaign_code, n, conversion_rates, algo)
+  var xhttp = new XMLHttpRequest()
+  xhttp.onreadystatechange = function () {
+    if (this.readyState === 4 && this.status === 200) {
+      response = JSON.parse(this.response)
+      console.log(response)
+    }
+  }
+  xhttp.open('POST', '/api/sim_page_views', true)
+  xhttp.setRequestHeader('Content-Type', 'application/json')
+  xhttp.setRequestHeader('X-CSRFToken', getCookie('csrftoken'))
+  xhttp.send(
+    JSON.stringify({
+      campaign_code : campaign_code,
+      n : n,
+      conversion_rates : conversion_rates,
+      algo : algo,
+    })
+  )
+}
 
 function lnBetaFunc(x,y) {
 

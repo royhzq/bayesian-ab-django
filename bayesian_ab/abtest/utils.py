@@ -206,3 +206,41 @@ def experiment(p1, p2, N=1000, algo="uniform", eps=0.2):
             data.append([y_A, y_B])
 
     return data
+
+def sim_page_visits(campaign, conversion_rates={}, n=1, algo='thompson'):
+
+    # Simulate users visiting variants of page
+    # Given dict of 'true' conversion rates. 
+    # Where dict = { 'A':0.5, 'B':0.84, 'C':0.12} example
+    # If key-value pair for variant not found, defaults to 0.5
+
+    variants = campaign.variants.all().values(
+        'code',
+        "impressions",
+        'conversions',
+        'conversion_rate',
+        'html_template',
+    ) 
+
+    for i in range(n):
+
+        if algo == 'thompson':
+            assigned_variant = thompson_sampling(variants)
+        if algo == 'egreedy':
+            assigned_variant = epsilon_greedy(variants, eps=eps)
+        if algo == 'UCB1':
+            assigned_variant = UCB1(variants)
+        if algo == 'uniform':
+            assigned_variant = random.sample(list(variants), 1)[0]
+
+        # Simulate user conversion after version assigned
+
+        conversion_prob = conversion_rates.get(assigned_variant['code'], 0.5)
+        conversion = 1 if random.random() > 1 - conversion_prob else 0
+        variant = Variant.objects.get(campaign=campaign, code=assigned_variant['code'])
+        variant.impressions = variant.impressions + 1
+        variant.conversions = variant.conversions + conversion
+        variant.conversion_rate = variant.conversions / variant.impressions
+        variant.save()
+
+    return True

@@ -3,10 +3,16 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import *
 from .models import Campaign, Variant
-from .utils import SimVariant, experiment
+from .utils import SimVariant, experiment, sim_page_visits
 
 
 class ABResponse(APIView):
+
+    ''' API to collect responses from users.
+    This API registers the impressions generated from page views 
+    and is also used to register conversions.
+    AJAX call to be made using Javascript in the A/B test page. 
+    '''
 
     def post(self, request, format=None):
 
@@ -22,7 +28,10 @@ class ABResponse(APIView):
             try:
                 campaign = Campaign.objects.get(code=campaign_code)
             except Campaign.DoesNotExist:
-                return Response({'details':'Campaign not found'}, status=status.HTTP_404_NOT_FOUND)
+                return Response(
+                    {'details':'Campaign not found'}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
 
             if campaign.active == False:
                 return Response({'details':'Campaign is inactive'})
@@ -33,18 +42,26 @@ class ABResponse(APIView):
                     campaign=campaign,
                 )
             except Variant.DoesNotExist:
-                return Response({'details':'Variant not found'}, status=status.HTTP_404_NOT_FOUND)
+                return Response(
+                    {'details':'Variant not found'}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
 
-            
             session_vars = request.session.get(campaign_code)
             if not session_vars:
-                return Response({'details':'Unable to find session variables for campaign.'}, status=status.HTTP_404_NOT_FOUND) 
+                return Response(
+                    {'details':'Unable to find session variables for campaign.'}, 
+                    status=status.HTTP_404_NOT_FOUND
+                ) 
 
             try:
                 session_impressions = session_vars['i']
                 session_conversions = session_vars['c']
             except:
-                return Response({'details':'Unable to retrieve session impressions and conversions'}, status=status.HTTP_404_NOT_FOUND)
+                return Response(
+                    {'details':'Unable to retrieve session impressions and conversions'}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
 
             ## Update variant impressions / conversions
             if campaign.allow_repeat:
@@ -74,6 +91,39 @@ class ABResponse(APIView):
 
             return Response({'details':'Response registered'})
 
+class SimPageVisitsAPI(APIView):
+
+    def post(self, request, forma=None):
+
+        serializer = SimPageVisitsSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            
+            campaign_code = serializer.data.get('campaign_code')
+            conversion_rates = serializer.data.get('conversion_rates',{})
+            n = serializer.data.get('n', 1)
+            algo = serializer.data.get('algo')
+
+            if algo not in ['uniform', 'thompson', 'egreedy', 'UCB1']:
+                return Response(
+                    {'details':'Invalid algorithm provided'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            try:
+                campaign = Campaign.objects.get(code=campaign_code)
+            except Campaign.DoesNotExist:
+                return Response(
+                    {'details':'Campaign does not exist'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            sim_page_visits(
+                campaign, 
+                conversion_rates=conversion_rates, 
+                n=n, 
+                algo=algo
+            )
+
+            return Response({'details':'Page visits simulated'})
+
 
 class RunSimulation(APIView):
 
@@ -88,8 +138,10 @@ class RunSimulation(APIView):
             eps = serializer.data.get('eps', 0.1)
 
             if algo not in ['uniform', 'thompson', 'egreedy', 'UCB1']:
-                Response({'details':'Invalid algorithm provided'}, status=status.HTTP_400_BAD_REQUEST)
-
+                return Response(
+                    {'details':'Invalid algorithm provided'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             data = experiment(
                 p1=p1,
                 p2=p2,
@@ -99,32 +151,3 @@ class RunSimulation(APIView):
             )  
 
             return Response(data)
-
-
-
-# class CategoryProductsAPI(CorpAPIView):
-
-#     def get(self,request, url_path, format=None):
-
-#         page = self.request.GET.get('page','1')
-
-#         if not page.isdigit() :
-#             page = 1 #if invalid / negative page number - default to 1
-
-#         pricebook = request.user.user_profile.pricebook
-
-#         try:
-#             category = Category.objects.get(url_path=url_path)
-#         except Category.DoesNotExist:
-#             return Response({"details":"Category does not exist"}, status=status.HTTP_404_NOT_FOUND)
-
-#         response = get_category_products(
-#             category=category,
-#             pricebook=pricebook,
-#             page=page
-#         )
-
-#         response['cateogry_name'] = category.name
-#         response['user_profile'] = self.user_profile
-
-#         return Response(response)
