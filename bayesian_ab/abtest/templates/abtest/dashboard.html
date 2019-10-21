@@ -100,7 +100,6 @@ The "true" conversion rate for each variant is already fixed and simulating enou
 <hr>
 <h3>Reset</h3>
 <p>To reset impressions and conversions for all variants, <a href="/clear_stats">click here</a></p>
-</body>
 
 {{ variant_vals|json_script:"dataset" }}
 
@@ -163,22 +162,6 @@ var color = [
     '#e78ac3',
     '#a6d854',
 ]
-
-
-// var path = svg.append("path")
-//     .attr("class", "line")
-//     .attr("id", "A")
-//     .attr("d", line(data1));
-
-// var path = svg.append("path")
-//     .attr("class", "line")
-//     .attr("id", "A")
-//     .attr("d", line(data2));
-
-// var path = svg.append("path")
-//     .attr("class", "line")
-//     .attr("id", "A")
-//     .attr("d", line(data3));
 
 dataset.forEach(function(d, i) {
     svg.append("path")
@@ -267,56 +250,6 @@ function simPageVisits(campaign_code, n, conversion_rates, algo) {
     })
   )
 }
-
-function lnBetaFunc(x,y) {
-
-    foo = 0.0;
-
-    for (i=0; i<x-2; i++) {
-        foo += Math.log(x-1-i);
-    }
-    for (i=0; i<y-2; i++) {
-        foo += Math.log(y-1-i);
-    }
-    for (i=0; i<x+y-2; i++) {
-        foo -= Math.log(x+y-1-i);
-    }
-    return foo
-}
-
-function betaFunc(x,y) {
-
-    return Math.exp(lnBetaFunc(x,y));
-}
-
-function lnBetaPDF(x, a, b) {
-
-    return ((a-1)*Math.log(x) + (b-1)*Math.log(1-x)) - lnBetaFunc(a,b)
-}
-
-function betaPDF(x, a, b) {
-    return Math.exp(lnBetaPDF(x, a, b))
-}
-
-
-function betaData(a, b) {
-    data = []
-    max = 0.0;
-    for (var i = 0; i < 500; i++) {
-        p = betaPDF(i/500, a, b);
-        el = {
-            "q": i/500,
-            "p": p
-        };
-        if (p >= max) {
-            max = p;
-        }
-        data.push(el);
-    };
-
-    return [max, data]
-}
-
 
 </script>
 {% endblock %}

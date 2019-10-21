@@ -1,0 +1,145 @@
+{% extends 'abtest/base.html' %}
+{% block header %}
+<header style="padding:0">
+    <h1>Bayesian A/B Test Simulator</h1>
+    <hr>
+</header>
+{% endblock %}
+{% block content %}
+<h1>Campaign: {{ campaign.name }}</h1>
+<div id="canvas">
+    <h2>Beta Posterior Probability Distribution of Variants</h2>
+</div>
+<div class="center" id="legend">
+</div>
+{{ dataset|json_script:"dataset"|safe }}
+<script>
+
+var dataset = JSON.parse(JSON.parse(document.getElementById('dataset').textContent));
+var data1 = dataset[1] 
+var data2 = dataset[2] 
+var data3 = dataset[3] 
+var data4 = dataset[4] 
+var data5 = dataset[5]
+
+console.log(dataset[0])
+var margin = {
+        top: 10,
+        right: 20,
+        bottom: 30,
+        left: 25
+    },
+    width = document.getElementById("canvas").offsetWidth - margin.left - margin.right,
+    height = 250 - margin.top - margin.bottom;
+
+var x = d3.scaleLinear()
+    .range([0, width]);
+
+var y = d3.scaleLinear()
+    .range([height, 0]);
+
+var xAxis = d3.axisBottom(x);
+var yAxis = d3.axisLeft(y);
+var line = d3.line()
+    .x(function(d) {
+        return x(d[0]);
+    })
+    .y(function(d) {
+
+        return y(d[1]);
+    });
+
+var svg = d3.select("#canvas").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+x.domain(d3.extent(dataset[0].x_vals, function(d) {
+    return d;
+}));
+y.domain([0, data1.max_y]);
+
+var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+svg.append("g")
+    .attr("class", "x-axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis);
+
+svg.append("g")
+    .attr("class", "y-axis")
+    .call(yAxis);
+
+var color = [
+    '#66c2a5',
+    '#fc8d62',
+    '#8da0cb',
+    '#e78ac3',
+    '#a6d854',
+]
+
+svg.append("path")
+    .attr("class", "line")
+    .attr("d", line(data1.xy_A))
+    .style("stroke", color[0])
+
+svg.append("path")
+    .attr("class", "line")
+    .attr("d", line(data1.xy_B))
+    .style("stroke", color[1])
+
+legend = document.getElementById('legend');
+// legend.innerHTML += '<div><span class="emdash" style="color:'+d.color+'">&#8213;&nbsp;</span>' + d.code+ '&nbsp;&nbsp;</div>';
+
+
+// animBeta([data1,data2,data3])
+
+// function animBeta(dataset) {
+//     // Takes in array of data 
+//     for(i=1; i< dataset.length; i++) {
+
+//         var path = d3.selectAll(".line").transition()
+//             .delay(i*500)
+//             .duration(500)
+//             .attr("class", "line")
+//             .attr("id", "A")
+//             .attr("d", line(dataset[i]));
+
+//     }
+// }
+function getCookie (name) {
+  var value = '; ' + document.cookie
+  var parts = value.split('; ' + name + '=')
+  if (parts.length === 2) {
+    return parts
+      .pop()
+      .split(';')
+      .shift()
+  }
+}
+function runSimulation(p1, p2, algo) {
+
+  var xhttp = new XMLHttpRequest()
+  xhttp.onreadystatechange = function () {
+    if (this.readyState === 4 && this.status === 200) {
+      response = JSON.parse(this.response)
+      console.log(response)
+      return response
+    }
+  }
+  xhttp.open('POST', '/api/experiment/simulation', true)
+  xhttp.setRequestHeader('Content-Type', 'application/json')
+  xhttp.setRequestHeader('X-CSRFToken', getCookie('csrftoken'))
+  xhttp.send(
+    JSON.stringify({
+        p1:p1,
+        p2:p2,
+        algo:algo,
+    })
+  )
+}
+runSimulation(p1=0.5,p2=0.5, algo='uniform')
+</script>
+
+{% endblock %}

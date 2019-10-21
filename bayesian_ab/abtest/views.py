@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from .utils import ab_assign, h, sim_page_visits
+from .utils import ab_assign, h, sim_page_visits, experiment
 from .models import Campaign, Variant
 from django.conf import settings
 import numpy as np
@@ -129,3 +129,19 @@ def clear_stats(request):
     )
     return redirect(dashboard)
 
+def simulation(request):
+
+    dataset = experiment(
+        p1=0.5, 
+        p2=0.5, 
+        N=1000, 
+        algo="uniform", 
+    )
+    context = {
+        'dataset':json.dumps(dataset)
+    }
+    return render(
+        request,
+        'abtest/simulation.html',
+        context
+    )

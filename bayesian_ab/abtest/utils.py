@@ -165,12 +165,12 @@ class SimVariant:
         self.b += 1-x
 
 
-def experiment(p1, p2, N=1000, algo="uniform", eps=0.2):
+def experiment(p1, p2, N=1000, algo="uniform", eps=0.2  ):
     # Simulate experiment on two versions
     # Returns array of y values for distributions
     # At checkpoints N=10, N=20, N=40, ... N=100
     
-    data = []
+    dataset = []
     A = SimVariant(p=p1)
     B = SimVariant(p=p2)
 
@@ -199,13 +199,22 @@ def experiment(p1, p2, N=1000, algo="uniform", eps=0.2):
             ucb_score_B = B.a/(B.a+B.b) + np.sqrt(2*np.log(i+1)/(B.a + B.b))
             selected = A if ucb_score_A > ucb_score_B else B
             selected.update(selected.simulate())
-        
+            
         if (i+1)%200 == 0:
+            data = {
+                'A':{'a':A.a, 'b' : A.b},
+                'B':{'a':B.a, 'b' : B.b,},
+            }
+            X = list(np.linspace(0,1,500))
             y_A = list(scipy.stats.beta.pdf(np.linspace(0,1,500), A.a, A.b))
             y_B = list(scipy.stats.beta.pdf(np.linspace(0,1,500), B.a, B.b))
-            data.append([y_A, y_B])
+            data['xy_A'] = list(zip(X, y_A))
+            data['xy_B'] = list(zip(X, y_B))
+            data['x_vals'] = X
+            data['max_y'] = max([max(y_A), max(y_B)])
+            dataset.append(data)
 
-    return data
+    return dataset
 
 def sim_page_visits(campaign, conversion_rates={}, n=1, eps=0.1, algo='thompson'):
 
