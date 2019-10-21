@@ -207,7 +207,7 @@ def experiment(p1, p2, N=1000, algo="uniform", eps=0.2):
 
     return data
 
-def sim_page_visits(campaign, conversion_rates={}, n=1, algo='thompson'):
+def sim_page_visits(campaign, conversion_rates={}, n=1, eps=0.1, algo='thompson'):
 
     # Simulate users visiting variants of page
     # Given dict of 'true' conversion rates. 
