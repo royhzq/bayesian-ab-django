@@ -1,12 +1,13 @@
 from django.shortcuts import render, redirect
-from .utils import ab_assign, h, sim_page_visits, experiment
-from .models import Campaign, Variant
 from django.conf import settings
+from .utils import ab_assign, h, sim_page_visits
+from .simulation import experiment
+from .models import Campaign, Variant
 import numpy as np
 import json
 import datetime
 
-def homepage(request, *args, **kwargs):
+def homepage(request):
     ''' Homepage view where we test different versions
     of the html template
     ''' 

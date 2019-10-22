@@ -1,4 +1,3 @@
-import functools
 import numpy as np
 import random
 import scipy.stats
@@ -6,7 +5,8 @@ import json
 from .models import Campaign, Variant
 from scipy.special import betaln
 
-def ab_assign(request, campaign, default_template, sticky_session=True, algo='thompson', eps=0.1):
+def ab_assign(request, campaign, default_template, 
+            sticky_session=True, algo='thompson', eps=0.1):
 
     ''' Function to assign user a variant based
     on latest updated distribution. Choice of algorithm includes:
@@ -50,17 +50,46 @@ def ab_assign(request, campaign, default_template, sticky_session=True, algo='th
     return assigned_variant
 
 def epsilon_greedy(variant_vals, eps=0.1):
+    """Epsilon-greedy algorithm implementation 
+    on Variant model values.
 
-    ''' Epsilon greedy algorithm for the
-    explore-exploit problem
-    '''
+    Parameters
+    ----------
+    variant_vals : list
+        A list of dictionary mappings of Variant field values for
+        a given Campaign object. Required ``Variant`` fields are
+        ``code`` ``impressions`` ``conversions`` ``conversion_rate`` 
+        ``html_template``. For example: ::
+
+            Campaign.objects.get(code='xxx').values(
+                'code',
+                'impressions',
+                'conversions',
+                'conversion_rate',
+                'html_template'
+            )    
+
+    eps : float
+        Exploration parameter. Values between 0.0 and 1.0.
+        Defaults to 0.1
+
+    Returns
+    -------
+    selected_variant : dict
+        The selected dictionary mapping of Variant fields
+        from ``variant_vals`` list, as chosen by the epsilon_greedy
+        algorithm
+
+    """
 
     if random.random() < eps: 
-        # Explore
+        # If random number < eps, exploration is chosen over 
+        # exploitation
         selected_variant = random.sample(list(variant_vals), 1)[0]
 
     else:
-        # Select best variant
+        # If random number >= eps, exploitation is chosen over
+        # exploration
         best_conversion_rate = 0.0
         selected_variant = None
         for var in variant_vals:
@@ -74,13 +103,40 @@ def epsilon_greedy(variant_vals, eps=0.1):
     return selected_variant
 
 def thompson_sampling(variant_vals):
+    """Thompson Sampling algorithm implementation 
+    on Variant model values.
 
-    ''' Thompson sampling
-    '''
+    Parameters
+    ----------
+    variant_vals : list
+        A list of dictionary mappings of Variant field values for
+        a given Campaign object. Required ``Variant`` fields are
+        ``code`` ``impressions`` ``conversions`` ``conversion_rate`` 
+        ``html_template``. For example: ::
+
+            Campaign.objects.get(code='xxx').values(
+                'code',
+                'impressions',
+                'conversions',
+                'conversion_rate',
+                'html_template'
+            )            
+
+    Returns
+    -------
+    selected_variant : dict
+        The selected dictionary mapping of Variant fields
+        from ``variant_vals`` list, as chosen by the Thompson Sampling
+        algorithm
+
+    """
     selected_variant = None
     best_sample = 0.0
     for var in variant_vals:
-        sample = np.random.beta(max(var['conversions'],1), max(var['impressions'] - var['conversions'],1))
+        sample = np.random.beta(
+            max(var['conversions'], 1), 
+            max(var['impressions'] - var['conversions'],1 )
+        )
         if sample > best_sample:
             best_sample = sample
             selected_variant = var
@@ -88,9 +144,33 @@ def thompson_sampling(variant_vals):
     return selected_variant
 
 def UCB1(variant_vals):
+    """Upper Confidence Bound algorithm implementation 
+    on Variant model values.
 
-    ''' Upper Confidence Bound
-    '''
+    Parameters
+    ----------
+    variant_vals : list
+        A list of dictionary mappings of Variant field values for
+        a given Campaign object. Required ``Variant`` fields are
+        ``code`` ``impressions`` ``conversions`` ``conversion_rate`` 
+        ``html_template``. For example: ::
+
+            Campaign.objects.get(code='xxx').values(
+                'code',
+                'impressions',
+                'conversions',
+                'conversion_rate',
+                'html_template'
+            )            
+
+    Returns
+    -------
+    selected_variant : dict
+        The selected dictionary mapping of Variant fields
+        from ``variant_vals`` list, as chosen by the UCB1
+        algorithm
+
+    """
     selected_variant = None
     best_score = 0.0
     total_impressions = sum([ var['impressions'] for var in variant_vals ])
@@ -105,148 +185,86 @@ def UCB1(variant_vals):
 
     return selected_variant
 
-## Stopping RUle
-# http://www.claudiobellei.com/2017/11/02/bayesian-AB-testing/
-# https://www.chrisstucchio.com/blog/2014/bayesian_ab_decision_rule.html
-# http://www.evanmiller.org/bayesian-ab-testing.html
-
 def h(a, b, c, d):
-
-    ''' Closed form solution for P(X>Y).
+    """Closed form solution for P(X>Y).
     Where:
-        X ~ Beta(a,b)
-        Y ~ Beta(c,d)    
+        X ~ Beta(a,b), Y ~ Beta(c,d)  
 
-    Reference:
+    Parameters
+    ----------
+    a : int
+        alpha shape parameter for the beta distribution. a > 0
+    b : int
+        beta shape parameter for the beta distribution. b > 0
+
+    Returns
+    -------
+    float
+        Returns probability of X > Y 
+
+    References
+    ----------
         https://www.chrisstucchio.com/blog/2014/bayesian_ab_decision_rule.html
-        https://cdn2.hubspot.net/hubfs/310840/VWO_SmartStats_technical_whitepaper.pdf
-        http://www.evanmiller.org/bayesian-ab-testing.html#implementation
-    '''
+ 
+    """
     total = 0.0 
     for j in range(c):
         total += np.exp(betaln(a+j, b+d) - np.log(d+j) - betaln(1+j, d) - betaln(a, b))
     return 1 - total
 
 def loss(a, b, c, d):
-    ''' The expected loss of choosing variant X over Y
-    Given that Y > X.
+    """Expected loss function built on P(X>Y)
     Where:
-        X ~ Beta(a,b)
-        Y ~ Beta(c,d)    
+        X ~ Beta(a,b), Y ~ Beta(c,d)  
 
-    Example:
-        loss(a=c, b=d, c=a, d=b)
-    Reference:
+    Parameters
+    ----------
+    a : int
+        alpha shape parameter for the beta distribution. a > 0
+    b : int
+        beta shape parameter for the beta distribution. b > 0
+
+    Returns
+    -------
+    float
+        Returns the expected loss in terms of conversion rate
+        when you pick variant Y over X when variant X actually has a higher 
+        conversion rate than Y.
+
+    References
+    ----------
         https://www.chrisstucchio.com/blog/2014/bayesian_ab_decision_rule.html
-    '''
+        https://cdn2.hubspot.net/hubfs/310840/VWO_SmartStats_technical_whitepaper.pdf
+ 
+    """
     return np.exp(betaln(a+1,b)-betaln(a,b))*h(a+1,b,c,d) - \
            np.exp(betaln(c+1,d)-betaln(c,d))*h(a,b,c+1,d)
 
 
-class SimVariant:
-    # Variant object for running simulation
-    def __init__(self, p):
-        self.p = p
-        self.a = 1.0
-        self.b = 1.0
-
-    def simulate(self):
-        # simulate a visit
-        # returns 1 if conversion occurred
-        return random.random() < self.p
-
-    def sample(self):
-        return np.random.beta(self.a, self.b)
-
-    def update(self, x):
-        # x is 1 or 0 for convert / no convert
-        self.a += x
-        self.b += 1-x
-
-
-def experiment(p1, p2, p3, N=1000, algo="uniform", eps=0.2  ):
-    
-    # Simulate experiment with three variants
-    # Returns array of y values for distributions
-    # At checkpoints N=10, N=20, N=40, ... N=100
-
-    A = SimVariant(p=p1)
-    B = SimVariant(p=p2)
-    C = SimVariant(p=p3)
-    variants = [A, B, C]
-
-    #  initialize dataset
-    dataset = []
-    x_vals = list(np.linspace(0,1,500))
-    init_y_val = list(scipy.stats.beta.pdf(x_vals, 1, 1))
-    init_xy_val = list(zip(x_vals, init_y_val))
-    dataset.append({
-        'N': 0,
-        'A':{'a':1, 'b' : 1 },
-        'B':{'a':1, 'b' : 1 },
-        'C':{'a':1, 'b' : 1 },
-        'xy_A': init_xy_val,
-        'xy_B': init_xy_val,
-        'x_vals': x_vals,
-        'xy_C': init_xy_val,
-        'max_y': 2,
-    })
-
-    for i in range(N):
-
-        if algo == 'uniform':
-            # Random selection
-            selected = random.sample(variants, 1)[0]
-            selected.update(selected.simulate())
-        if algo == 'thompson':
-            variants_samples = [A.sample(), B.sample(), C.sample()]
-            selected = variants[variants_samples.index(max(variants_samples))]
-            selected.update(selected.simulate())
-        if algo == 'egreedy':
-            # epsilon is default 0.1
-            if random.random() < 0.1:
-                selected = random.sample(variants, 1)[0]
-                selected.update(selected.simulate())
-            else:
-                variants_rates = [
-                    A.a/(A.a+A.b),
-                    B.a/(B.a+B.b),
-                    C.a/(C.a+C.b)
-                ]
-                selected = variants[variants_rates.index(max(variants_rates))]
-                selected.update(selected.simulate())
-
-        if algo == 'UCB1':
-            variants_scores = [
-                A.a/(A.a+A.b) + np.sqrt(2*np.log(i+1)/(A.a + A.b)),
-                B.a/(B.a+B.b) + np.sqrt(2*np.log(i+1)/(B.a + B.b)),
-                C.a/(C.a+C.b) + np.sqrt(2*np.log(i+1)/(C.a + C.b)),
-            ]
-            selected = variants[variants_scores.index(max(variants_scores))]
-            # selected = A if ucb_score_A > ucb_score_B else B
-            selected.update(selected.simulate())
-        
-        # Return data at intervals
-        if i+1 in [10, 20, 50, 100, 200, 500, 1000, 5000, 10000]:
-            data = {
-                'N': i+1,
-                'A':{'a':A.a, 'b' : A.b },
-                'B':{'a':B.a, 'b' : B.b },
-                'C':{'a':C.a, 'b' : C.b }
-            }
-            y_A = list(scipy.stats.beta.pdf(x_vals, A.a, A.b))
-            y_B = list(scipy.stats.beta.pdf(x_vals, B.a, B.b))
-            y_C = list(scipy.stats.beta.pdf(x_vals, C.a, C.b))
-            data['xy_A'] = list(zip(x_vals, y_A))
-            data['xy_B'] = list(zip(x_vals, y_B))
-            data['xy_C'] = list(zip(x_vals, y_C))
-            data['x_vals'] = x_vals
-            data['max_y'] = max([max(y_A), max(y_B), max(y_C)])
-            dataset.append(data)
-
-    return dataset
-
 def sim_page_visits(campaign, conversion_rates={}, n=1, eps=0.1, algo='thompson'):
+
+    """ Simulate `n` page visits to the page that is being A/B tested. 
+    The probability of each simulated page visited generating a conversion
+    is determined by the conversion rates provided in the `conversion_rates` param.
+
+    Parameters
+    ----------
+    campaign : :obj:`Campaign`
+        The A/B test Campaign model object which will be subject to the simulation 
+    conversion_rates : dict: ``{code: probability}``
+        Dictionary mapping to contain the probability of conversion for each 
+        simulated page visit for each Variant available in the campaign.
+    n : int
+        Number of page visits to simulate.
+    algo : str
+        Algorithm to determine the assignment (explore-exploit) of the Variant
+        to the page request. Valid values are `thompson`, `egreedy`, `uniform`, `UCB1`.
+        Defaults to `thompson`.
+
+    Returns
+    -------
+    
+    """
 
     # Simulate users visiting variants of page
     # Given dict of 'true' conversion rates. 

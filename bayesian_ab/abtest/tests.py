@@ -1,9 +1,9 @@
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.test import TestCase, RequestFactory
 from .models import Campaign, Variant
+from .simulation import experiment
 from .utils import (epsilon_greedy, thompson_sampling, UCB1,
-                    h, loss, ab_assign, experiment,
-                    sim_page_visits)
+                    h, loss, ab_assign, sim_page_visits)
 
 class AlgorithmTests(TestCase):
 
@@ -233,12 +233,10 @@ class SimulationTests(TestCase):
         # Test for all algorithms
         all_simulated = True
         for algo in ['thompson', 'egreedy', 'UCB1', 'uniform']:
-            data = experiment(
+            dataset = experiment(
                 p1=0.5,
                 p2=0.55,
                 p3=0.66,
-                N=1000,
+                N=10000,
             )
-            if len(data) != 1000/200:
-                all_simulated = False
-        self.assertTrue(all_simulated)
+        self.assertTrue(dataset)

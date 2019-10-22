@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import *
 from .models import Campaign, Variant
-from .utils import SimVariant, experiment, sim_page_visits
+from .utils import sim_page_visits
+from .simulation import experiment
 
 
 class ABResponse(APIView):
