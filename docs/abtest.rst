@@ -9,3 +9,9 @@ The utils module
 
 .. automodule:: abtest.utils
     :members:
+
+The simulation module
+---------------------
+
+.. automodule:: abtest.simulation
+    :members:

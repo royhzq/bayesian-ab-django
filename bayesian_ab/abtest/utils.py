@@ -1,3 +1,8 @@
+""" The utils module contains functions relating to the assignment logic 
+for Bayesian A/B testing. Contains functions for various explore-exploit 
+algorithms as well as for decision rules.
+"""
+
 import numpy as np
 import random
 import scipy.stats
@@ -7,6 +12,70 @@ from scipy.special import betaln
 
 def ab_assign(request, campaign, default_template, 
             sticky_session=True, algo='thompson', eps=0.1):
+
+    """ Main function for A/B testing. Used in Django Views.
+    Determines the HTML template to serve for a given request
+    (i.e., Variant A/B/C ). 
+
+    Common explore-exploit algorithms for Bayesian A/B testing 
+    are available, and are used to determine the stochastic 
+    assignment of the variant to the user/request.
+
+    Parameters
+    ----------
+    request : :obj:`WSGIRequest`
+        Django WSGI request object. Passed from Views
+    campaign : :obj:`Campaign`
+        A/B test Campaign model object.
+    default_template : str
+        File path to default template for the view
+        (i.e., the template to serve if View is not under A/B testing)
+    sticky_session : bool
+        If True, the application remembers the last assigned variant 
+        template and will serve the same template to the user without 
+        running any assignment algorithms. The application "remembers" 
+        the last assignment by assigning and checking session variables.
+        Defaults to True
+    algo : str, optional
+        Choice of explore-exploit algorithms to determine the assignment
+        of variant to the user / request. The choice of algorithms are:
+        
+            * *thompson* : Thompson sampling algorithm
+            * *UCB1* : Upper Confidence Bound algorithm
+            * *uniform* : Uniformly random sampling of variants
+            * *egreedy* : Epsilon-Greedy algorithm with exploration parameter determined by ``eps`` parameter
+
+        Defaults to *thompson*.
+
+    eps : float, optional
+        Exploration parameter for the epsilon-greedy ``egreedy`` algorithm. 
+        Only applicable to ``egreedy`` algorithm option. Defaults to 0.1
+
+    Returns
+    -------
+    dict
+        Returns a dictionary of ``Variant`` model values which include
+        values for fields ``code``, ``impressions``, ``conversions``, 
+        ``conversion_rate``, ``html_template``.
+
+    Examples
+    --------
+    >>> campaign = Campaign.objects.get(name="Test Homepage")
+    ... assigned_variant = ab_assign(
+    ...     request=request, # Passed from Django View
+    ...     campaign=campaign,
+    ...     default_template='abtest/homepage.html',
+    ...     sticky_session=False,
+    ...     algo='thompson',
+    ... )
+    {
+        'code':'A',
+        'impressions':10,
+        'conversions':5,
+        'conversion_rate':0.5,
+        'html_template':'abtest/homepage_A.html'
+    }
+    """
 
     ''' Function to assign user a variant based
     on latest updated distribution. Choice of algorithm includes:
@@ -29,7 +98,7 @@ def ab_assign(request, campaign, default_template,
 
     variants = campaign.variants.all().values(
         'code',
-        "impressions",
+        'impressions',
         'conversions',
         'conversion_rate',
         'html_template',
@@ -187,8 +256,9 @@ def UCB1(variant_vals):
 
 def h(a, b, c, d):
     """Closed form solution for P(X>Y).
-    Where:
-        X ~ Beta(a,b), Y ~ Beta(c,d)  
+    Where: 
+
+    X ~ Beta(a,b), Y ~ Beta(c,d)  
 
     Parameters
     ----------
@@ -204,7 +274,7 @@ def h(a, b, c, d):
 
     References
     ----------
-        https://www.chrisstucchio.com/blog/2014/bayesian_ab_decision_rule.html
+    https://www.chrisstucchio.com/blog/2014/bayesian_ab_decision_rule.html
  
     """
     total = 0.0 
@@ -215,7 +285,8 @@ def h(a, b, c, d):
 def loss(a, b, c, d):
     """Expected loss function built on P(X>Y)
     Where:
-        X ~ Beta(a,b), Y ~ Beta(c,d)  
+    
+    X ~ Beta(a,b), Y ~ Beta(c,d)  
 
     Parameters
     ----------
@@ -241,7 +312,7 @@ def loss(a, b, c, d):
            np.exp(betaln(c+1,d)-betaln(c,d))*h(a,b,c+1,d)
 
 
-def sim_page_visits(campaign, conversion_rates={}, n=1, eps=0.1, algo='thompson'):
+def sim_page_visits(campaign, n, conversion_rates, algo='thompson', eps=0.1, ):
 
     """ Simulate `n` page visits to the page that is being A/B tested. 
     The probability of each simulated page visited generating a conversion
@@ -254,22 +325,40 @@ def sim_page_visits(campaign, conversion_rates={}, n=1, eps=0.1, algo='thompson'
     conversion_rates : dict: ``{code: probability}``
         Dictionary mapping to contain the probability of conversion for each 
         simulated page visit for each Variant available in the campaign.
+        If key-value pair for variant not provided in the mapping, that 
+        variant's probability of conversion will default to 0.5.
     n : int
         Number of page visits to simulate.
-    algo : str
+    algo : str, optional
         Algorithm to determine the assignment (explore-exploit) of the Variant
-        to the page request. Valid values are `thompson`, `egreedy`, `uniform`, `UCB1`.
-        Defaults to `thompson`.
+        to the page request. 
+        Valid values are ``thompson``, ``egreedy``, ``uniform``, ``UCB1``,
+        Defaults to ``thompson``.
+    eps : float, optional
+        Exploration parameter for the epsilon-greedy ``egreedy`` algorithm. 
+        Only applicable to ``egreedy`` algorithm option. Defaults to 0.1
 
+    
     Returns
     -------
-    
-    """
+    bool
+        True if successful
 
-    # Simulate users visiting variants of page
-    # Given dict of 'true' conversion rates. 
-    # Where dict = { 'A':0.5, 'B':0.84, 'C':0.12} example
-    # If key-value pair for variant not found, defaults to 0.5
+    Examples
+    --------
+    >>> sim_page_visits(
+    ...     campaign=Campaign.objects.get(code='xx-xx-xx'),
+    ...     conversion_rates= {
+    ...         'A':0.5,
+    ...         'B':0.5,
+    ...         'C':0.5,
+    ...     },
+    ...     n=10000,
+    ...     algo='thompson',
+    ... )
+    True
+
+    """
 
     variants = campaign.variants.all().values(
         'code',
@@ -278,9 +367,7 @@ def sim_page_visits(campaign, conversion_rates={}, n=1, eps=0.1, algo='thompson'
         'conversion_rate',
         'html_template',
     ) 
-
     for i in range(n):
-
         if algo == 'thompson':
             assigned_variant = thompson_sampling(variants)
         if algo == 'egreedy':
@@ -291,10 +378,12 @@ def sim_page_visits(campaign, conversion_rates={}, n=1, eps=0.1, algo='thompson'
             assigned_variant = random.sample(list(variants), 1)[0]
 
         # Simulate user conversion after version assigned
-
         conversion_prob = conversion_rates.get(assigned_variant['code'], 0.5)
         conversion = 1 if random.random() > 1 - conversion_prob else 0
-        variant = Variant.objects.get(campaign=campaign, code=assigned_variant['code'])
+        variant = Variant.objects.get(
+            campaign=campaign, 
+            code=assigned_variant['code']
+        )
         variant.impressions = variant.impressions + 1
         variant.conversions = variant.conversions + conversion
         variant.conversion_rate = variant.conversions / variant.impressions

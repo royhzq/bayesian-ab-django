@@ -1,3 +1,9 @@
+""" The simulation module is independent from the rest of the application.
+Used mainly to simulate a three variant Bayesian A/B/C Test abd to generate
+the XY values for plotting the Beta distribution curves at regular checkpoints
+of the simulation. See ``experiment`` function below.
+"""
+
 import random
 import numpy as np
 import scipy.stats

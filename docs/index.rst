@@ -10,11 +10,10 @@ Welcome to bayesian_ab's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   api
+   abtest
 
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
