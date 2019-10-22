@@ -132,9 +132,9 @@ def clear_stats(request):
 def simulation(request):
 
     dataset = experiment(
-        p1=0.5, 
-        p2=0.5,
-        p3=0.5,
+        p1=0.3, 
+        p2=0.6,
+        p3=0.65,
         N=10000, 
         algo="thompson", 
     )

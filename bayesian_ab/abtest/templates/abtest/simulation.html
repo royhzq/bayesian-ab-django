@@ -14,10 +14,65 @@
     <input id="rangeSlider" class="slider" type="range" min="1" max="10" value="1">
 </div>
 <div class="center">
-    <span class="math">\mu_A</span><input id="mu-A" class="rate-field" type="number" min="0.01" max="0.99" step="0.01">
-    <span class="math">\mu_B</span><input id="mu-B" class="rate-field" type="number" min="0.01" max="0.99" step="0.01">
-    <span class="math">\mu_C</span><input id="mu-C" class="rate-field" type="number" min="0.01" max="0.99" step="0.01">
+    <span class="math">\mu_A</span><input id="mu-A" class="rate-field" type="number" min="0.01" max="0.99" step="0.01" value="0.30">
+    <span class="math">\mu_B</span><input id="mu-B" class="rate-field" type="number" min="0.01" max="0.99" step="0.01" value="0.65">
+    <span class="math">\mu_C</span><input id="mu-C" class="rate-field" type="number" min="0.01" max="0.99" step="0.01" value="0.75">
+</div>
+<div class="center">
+    <select id="algorithm" class="algo-select">
+        <option value="thompson">Thompson Sampling</option>
+        <option value="egreedy">Epsilon-Greedy, eps=0.1</option>
+        <option value="uniform">Uniform</option>
+        <option value="UCB1">UCB1</option>
+    </select>
+</div>
+<div class="center">
     <button class="simulate-button">Simulate</button>
+</div>
+<div class="center">
+    <table id="results-table">
+        <tr>
+        <td colspan="7" class="td-title" id="results-title">
+            Summary of Results &nbsp;
+        </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><span class="math">n</span></td>
+            <td><span class="math">\alpha</span></td>
+            <td><span class="math">\beta</span></td>
+            <td>Conversions</td>
+            <td>Impressions</td>
+            <td>Conversion Rate</td>
+        </tr>
+        <tr id="table-row-A">
+            <td>A</td>
+            <td id="n-cell-A"></td>
+            <td id="alpha-cell-A"></td>
+            <td id="beta-cell-A"></td>
+            <td id="conversions-cell-A"></td>
+            <td id="impressions-cell-A"></td>
+            <td id="conversion-rate-cell-A"></td>
+        </tr>
+        <tr id="table-row-B">
+            <td>B</td>
+            <td id="n-cell-B"></td>
+            <td id="alpha-cell-B"></td>
+            <td id="beta-cell-B"></td>
+            <td id="conversions-cell-B"></td>
+            <td id="impressions-cell-B"></td>
+            <td id="conversion-rate-cell-B"></td>
+        </tr>
+        <tr id="table-row-C">
+            <td>C</td>
+            <td id="n-cell-C"></td>
+            <td id="alpha-cell-C"></td>
+            <td id="beta-cell-C"></td>
+            <td id="conversions-cell-C"></td>
+            <td id="impressions-cell-C"></td>
+            <td id="conversion-rate-cell-C"></td>
+        </tr>
+    </table>
 </div>
 
 {{ dataset|json_script:"dataset"|safe }}
@@ -53,7 +108,7 @@ var svg = d3.select("#canvas").append("svg")
 x.domain(d3.extent(dataset[0].x_vals, function(d) {
     return d;
 }));
-y.domain([0, dataset[9].max_y]);
+y.domain([0, dataset[4].max_y]);
 svg.append("g")
     .attr("class", "x-axis")
     .attr("transform", "translate(0," + height + ")")
@@ -82,19 +137,19 @@ var color = [
 svg.append("path")
     .attr("class", "line")
     .attr("id", "A")
-    .attr("d", line(dataset[9].xy_A))
+    .attr("d", line(dataset[4].xy_A))
     .style("stroke", color[0])
 
 svg.append("path")
     .attr("class", "line")
     .attr("id", "B")
-    .attr("d", line(dataset[9].xy_B))
+    .attr("d", line(dataset[4].xy_B))   
     .style("stroke", color[1])
 
 svg.append("path")
     .attr("class", "line")
     .attr("id", "C")
-    .attr("d", line(dataset[9].xy_C))
+    .attr("d", line(dataset[4].xy_C))
     .style("stroke", color[2])
 
 legend = document.getElementById('legend');
@@ -108,16 +163,29 @@ document.getElementById("rangeSlider").addEventListener("click", function(){
     this.disabled = false;
 });
 
-document.getElementById("rangeSlider").value = 10; //Initial slider value
-document.getElementById("N").innerHTML= "N=" + dataset[9].N //Simulation sample size
+document.getElementsByClassName("simulate-button")[0].addEventListener("click", function(){
+    this.disabled=true;
+    runSimulation();
+});
+
+document.getElementById("rangeSlider").value = 5; //Initial slider value
+document.getElementById("N").innerHTML= "N=" + dataset[4].N //Simulation sample size
+updateResults(dataset[4]);
 
 // Configure input fields for true conversion rates
 var rateFields = document.getElementsByClassName('rate-field');
 for (i=0; i<rateFields.length; i++) {
     rateFields[i].oninput = function () {
+
+        // Ensure field input <= 0.99
         var max = parseInt(this.max);
         if (parseInt(this.value) > max) {
             this.value = this.value/10;
+        }
+        // Limit decimal places
+        if (this.value.length > 4) {
+            var val= this.value;
+            this.value = parseFloat(val).toFixed(2);
         }
     }
 }
@@ -164,26 +232,39 @@ function updatePosterior(data) {
         .attr("d", line(data.xy_C));
 
     // Update Simulation sample size
-    document.getElementById("N").innerHTML= "N=" + data.N
+    document.getElementById("N").innerHTML= "N=" + data.N;
+
+    // Update results table
+    updateResults(data);
 }
-// legend.innerHTML += '<div><span class="emdash" style="color:'+d.color+'">&#8213;&nbsp;</span>' + d.code+ '&nbsp;&nbsp;</div>';
 
+function updateResults(data) {
+    // Update Summary Results Table
+    var resultsTable = document.getElementById("results-table");
+    var variants = ["A", "B", "C"];
+    for (i=0; i < variants.length; i++) {
+        var variant = variants[i];
+        var variantData = data[variant];
+        var resultsTitle = document.getElementById("results-title");
+        var n = document.getElementById("n-cell-"+ variant);
+        var alpha = document.getElementById("alpha-cell-"+ variant);
+        var beta = document.getElementById("beta-cell-"+ variant);
+        var conversions = document.getElementById("conversions-cell-"+ variant);
+        var impressions = document.getElementById("impressions-cell-"+ variant);
+        var rate = document.getElementById("conversion-rate-cell-"+ variant);
+        n.innerText = data[variant].a + data[variant].b -2;
+        alpha.innerText = data[variant].a;
+        beta.innerText = data[variant].b;
+        conversions.innerText = data[variant].a -1;
+        impressions.innerText = data[variant].a + data[variant].b -2;
+        rate.innerText = (parseInt(conversions.innerText) / parseInt(impressions.innerText)).toFixed(2);
+        if (rate.innerText === "NaN") {
+            rate.innerText = "-";
+        }
+        resultsTitle.innerText = "Summary of Results " + document.getElementById("N").innerHTML;
+    }   
+}
 
-// animBeta([data1,data2,data3])
-
-// function animBeta(dataset) {
-//     // Takes in array of data 
-//     for(i=1; i< dataset.length; i++) {
-
-//         var path = d3.selectAll(".line").transition()
-//             .delay(i*500)
-//             .duration(500)
-//             .attr("class", "line")
-//             .attr("id", "A")
-//             .attr("d", line(dataset[i]));
-
-//     }
-// }
 function getCookie (name) {
   var value = '; ' + document.cookie
   var parts = value.split('; ' + name + '=')
@@ -194,13 +275,34 @@ function getCookie (name) {
       .shift()
   }
 }
-function runSimulation(p1, p2, p3, algo) {
+function runSimulation() {
+
+  p1 = document.getElementById("mu-A");
+  p2 = document.getElementById("mu-B");
+  p3 = document.getElementById("mu-C");
+
+  if (p1.value === "") {
+    p1.value = Math.random().toFixed(2);
+  }
+  if (p2.value === "") {
+    p2.value = Math.random().toFixed(2);
+  }
+  if (p3.value === "") {
+    p3.value = Math.random().toFixed(2);
+  }
+
+  algo = document.getElementById("algorithm").value;
+
+  console.log(p1,p2,p3,algo);
 
   var xhttp = new XMLHttpRequest()
   xhttp.onreadystatechange = function () {
     if (this.readyState === 4 && this.status === 200) {
       dataset = JSON.parse(this.response)
-      console.log(dataset)
+      updatePosterior(dataset[4]);
+      document.getElementById("rangeSlider").value="4";
+      document.getElementsByClassName("simulate-button")[0].disabled = false;
+
     }
   }
   xhttp.open('POST', '/api/experiment/simulation', true)
@@ -208,9 +310,9 @@ function runSimulation(p1, p2, p3, algo) {
   xhttp.setRequestHeader('X-CSRFToken', getCookie('csrftoken'))
   xhttp.send(
     JSON.stringify({
-        p1:p1,
-        p2:p2,
-        p3:p3,
+        p1:p1.value,
+        p2:p2.value,
+        p3:p3.value,
         algo:algo,
     })
   )
