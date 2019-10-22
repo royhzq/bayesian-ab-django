@@ -6,38 +6,33 @@
 </header>
 {% endblock %}
 {% block content %}
-<h1>Campaign: {{ campaign.name }}</h1>
-<div id="canvas">
-    <h2>Beta Posterior Probability Distribution of Variants</h2>
-</div>
+<h2>Beta Posterior Probability Distribution of Variants</h2>
+
+<div class="center" id="canvas"></div>
 <div class="center" id="legend"></div>
-<div class="center"><input id="rangeSlider" class="slider" type="range" min="1" max="6" value="1"></div>
+<div class="center">
+    <input id="rangeSlider" class="slider" type="range" min="1" max="10" value="1">
+</div>
+<div class="center">
+    <span class="math">\mu_A</span><input id="mu-A" class="rate-field" type="number" min="0.01" max="0.99" step="0.01">
+    <span class="math">\mu_B</span><input id="mu-B" class="rate-field" type="number" min="0.01" max="0.99" step="0.01">
+    <span class="math">\mu_C</span><input id="mu-C" class="rate-field" type="number" min="0.01" max="0.99" step="0.01">
+    <button class="simulate-button">Simulate</button>
+</div>
+
 {{ dataset|json_script:"dataset"|safe }}
 <script>
-
 var dataset = JSON.parse(JSON.parse(document.getElementById('dataset').textContent));
-var data1 = dataset[0] 
-var data2 = dataset[1] 
-var data3 = dataset[2] 
-var data4 = dataset[3] 
-var data5 = dataset[4]
-var data6 = dataset[5]
-
 var margin = {
         top: 10,
         right: 20,
         bottom: 30,
         left: 25
     },
-    width = document.getElementById("canvas").offsetWidth - margin.left - margin.right,
-    height = 250 - margin.top - margin.bottom;
-
-var x = d3.scaleLinear()
-    .range([0, width]);
-
-var y = d3.scaleLinear()
-    .range([height, 0]);
-
+width = document.getElementById("canvas").offsetWidth*0.85 - margin.left - margin.right,
+height = 300 - margin.top - margin.bottom;
+var x = d3.scaleLinear().range([0, width]);
+var y = d3.scaleLinear().range([height, 0]);
 var xAxis = d3.axisBottom(x);
 var yAxis = d3.axisLeft(y).tickSizeOuter(3);
 var line = d3.line()
@@ -58,10 +53,7 @@ var svg = d3.select("#canvas").append("svg")
 x.domain(d3.extent(dataset[0].x_vals, function(d) {
     return d;
 }));
-y.domain([0, data5.max_y]);
-
-var color = d3.scaleOrdinal(d3.schemeCategory10);
-
+y.domain([0, dataset[9].max_y]);
 svg.append("g")
     .attr("class", "x-axis")
     .attr("transform", "translate(0," + height + ")")
@@ -70,6 +62,14 @@ svg.append("g")
 svg.append("g")
     .attr("class", "y-axis")
     .call(yAxis);
+
+svg.append("text")
+    .attr("id", "N")
+    .attr("y", 5)
+    .attr("x", 0.85*width)
+    .style("font-size", "1.2rem")
+    .attr('text-anchor', 'middle')
+    .text("N=");
 
 var color = [
     '#66c2a5',
@@ -82,35 +82,45 @@ var color = [
 svg.append("path")
     .attr("class", "line")
     .attr("id", "A")
-    .attr("d", line(data5.xy_A))
+    .attr("d", line(dataset[9].xy_A))
     .style("stroke", color[0])
 
 svg.append("path")
     .attr("class", "line")
     .attr("id", "B")
-    .attr("d", line(data5.xy_B))
+    .attr("d", line(dataset[9].xy_B))
     .style("stroke", color[1])
 
 svg.append("path")
     .attr("class", "line")
     .attr("id", "C")
-    .attr("d", line(data5.xy_C))
+    .attr("d", line(dataset[9].xy_C))
     .style("stroke", color[2])
 
 legend = document.getElementById('legend');
-legend.innerHTML += '<div><span class="emdash" style="color:'+color[0]+'">&#8213;&nbsp;</span>A&nbsp;&nbsp;</div>';
-legend.innerHTML += '<div><span class="emdash" style="color:'+color[1]+'">&#8213;&nbsp;</span>B&nbsp;&nbsp;</div>';
-legend.innerHTML += '<div><span class="emdash" style="color:'+color[2]+'">&#8213;&nbsp;</span>C&nbsp;&nbsp;</div>';
+legend.innerHTML += '<div><span class="emdash" style="color:'+color[0]+'">&#8213;&nbsp;</span>Variant A&nbsp;&nbsp;</div>';
+legend.innerHTML += '<div><span class="emdash" style="color:'+color[1]+'">&#8213;&nbsp;</span>Variant B&nbsp;&nbsp;</div>';
+legend.innerHTML += '<div><span class="emdash" style="color:'+color[2]+'">&#8213;&nbsp;</span>Variant C&nbsp;&nbsp;</div>';
 
 document.getElementById("rangeSlider").addEventListener("click", function(){
     this.disabled=true;
     updatePosterior(dataset[this.value-1]);
     this.disabled = false;
 });
-document.getElementById("rangeSlider").value = 6;
 
+document.getElementById("rangeSlider").value = 10; //Initial slider value
+document.getElementById("N").innerHTML= "N=" + dataset[9].N //Simulation sample size
 
-
+// Configure input fields for true conversion rates
+var rateFields = document.getElementsByClassName('rate-field');
+for (i=0; i<rateFields.length; i++) {
+    rateFields[i].oninput = function () {
+        var max = parseInt(this.max);
+        if (parseInt(this.value) > max) {
+            this.value = this.value/10;
+        }
+    }
+}
 function updatePosterior(data) {
 
     var line = d3.line()
@@ -153,7 +163,8 @@ function updatePosterior(data) {
         .attr("id", "C")
         .attr("d", line(data.xy_C));
 
-
+    // Update Simulation sample size
+    document.getElementById("N").innerHTML= "N=" + data.N
 }
 // legend.innerHTML += '<div><span class="emdash" style="color:'+d.color+'">&#8213;&nbsp;</span>' + d.code+ '&nbsp;&nbsp;</div>';
 

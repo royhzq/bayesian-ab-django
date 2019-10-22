@@ -166,7 +166,8 @@ class SimVariant:
 
 
 def experiment(p1, p2, p3, N=1000, algo="uniform", eps=0.2  ):
-    # Simulate experiment on two versions
+    
+    # Simulate experiment with three variants
     # Returns array of y values for distributions
     # At checkpoints N=10, N=20, N=40, ... N=100
 
@@ -202,7 +203,6 @@ def experiment(p1, p2, p3, N=1000, algo="uniform", eps=0.2  ):
         if algo == 'thompson':
             variants_samples = [A.sample(), B.sample(), C.sample()]
             selected = variants[variants_samples.index(max(variants_samples))]
-            # selected = A if A.sample() > B.sample() else B
             selected.update(selected.simulate())
             
         if algo == 'egreedy':
@@ -217,7 +217,6 @@ def experiment(p1, p2, p3, N=1000, algo="uniform", eps=0.2  ):
                     C.a/(C.a+C.b)
                 ]
                 selected = variants[variants_rates.index(max(variants_rates))]
-                # selected = A if A.a/(A.a+A.b) > B.a/(B.a+B.b) else B
                 selected.update(selected.simulate())
 
         if algo == 'UCB1':
@@ -229,10 +228,11 @@ def experiment(p1, p2, p3, N=1000, algo="uniform", eps=0.2  ):
             selected = variants[variants_scores.index(max(variants_scores))]
             # selected = A if ucb_score_A > ucb_score_B else B
             selected.update(selected.simulate())
-            
-        if (i+1)%200 == 0:
+        
+        # Return data at intervals
+        if i+1 in [10, 20, 50, 100, 200, 500, 1000, 5000, 10000]:
             data = {
-                'N': i,
+                'N': i+1,
                 'A':{'a':A.a, 'b' : A.b },
                 'B':{'a':B.a, 'b' : B.b },
                 'C':{'a':C.a, 'b' : C.b }
