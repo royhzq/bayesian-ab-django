@@ -6,15 +6,10 @@ import numpy as np
 import json
 import datetime
 
-def save_new_session(request):
-    if not request.session.session_key:
-        request.session.save()
-
 def homepage(request, *args, **kwargs):
     ''' Homepage view where we test different versions
     of the html template
     ''' 
-    save_new_session(request) # Ensure session exists 
     campaign = Campaign.objects.get(name="Test Homepage")
     assigned_variant = ab_assign(
         request=request,
@@ -35,8 +30,6 @@ def homepage(request, *args, **kwargs):
         template,
         context
     )
-
-
 
 def dashboard(request):
     ''' Demonstration dashboard for statistics on ab test

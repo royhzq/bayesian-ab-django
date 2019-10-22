@@ -34,7 +34,6 @@ def ab_assign(request, campaign, default_template, sticky_session=True, algo='th
         'conversion_rate',
         'html_template',
     ) 
-
     if algo == 'thompson':
         assigned_variant = thompson_sampling(variants)
     if algo == 'egreedy':
@@ -44,7 +43,7 @@ def ab_assign(request, campaign, default_template, sticky_session=True, algo='th
     if algo == 'uniform':
         assigned_variant = random.sample(list(variants), 1)[0]
 
-    # Record assigned template
+    # Record assigned template as session variable
     request.session[code]['html_template'] = assigned_variant['html_template']
     request.session.modified = True
 
@@ -199,12 +198,10 @@ def experiment(p1, p2, p3, N=1000, algo="uniform", eps=0.2  ):
             # Random selection
             selected = random.sample(variants, 1)[0]
             selected.update(selected.simulate())
-            
         if algo == 'thompson':
             variants_samples = [A.sample(), B.sample(), C.sample()]
             selected = variants[variants_samples.index(max(variants_samples))]
             selected.update(selected.simulate())
-            
         if algo == 'egreedy':
             # epsilon is default 0.1
             if random.random() < 0.1:
