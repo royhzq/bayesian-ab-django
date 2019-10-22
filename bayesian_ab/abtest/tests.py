@@ -199,6 +199,11 @@ class SimulationTests(TestCase):
     
             simulated = sim_page_visits(
                 campaign=self.campaign,
+                conversion_rates = {
+                    'A' : 0.5,
+                    'B' : 0.6,
+                    'C' : 0.7
+                },
                 n=100,
                 algo=algo
             )
