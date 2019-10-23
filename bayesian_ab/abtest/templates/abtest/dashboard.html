@@ -116,12 +116,8 @@ var margin = {
     width = document.getElementById("canvas").offsetWidth - margin.left - margin.right,
     height = 300 - margin.top - margin.bottom;
 
-var x = d3.scaleLinear()
-    .range([0, width]);
-
-var y = d3.scaleLinear()
-    .range([height, 0]);
-
+var x = d3.scaleLinear().range([0, width]);
+var y = d3.scaleLinear().range([height, 0]);
 var xAxis = d3.axisBottom(x);
 var yAxis = d3.axisLeft(y);
 var line = d3.line()
@@ -132,7 +128,6 @@ var line = d3.line()
 
         return y(d[1]);
     });
-
 var svg = d3.select("#canvas").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
@@ -143,8 +138,6 @@ x.domain(d3.extent(x_vals, function(d) {
     return d;
 }));
 y.domain([0, {{ max_y }} ]);
-
-var color = d3.scaleOrdinal(d3.schemeCategory10);
 
 svg.append("g")
     .attr("class", "x-axis")
@@ -169,10 +162,17 @@ dataset.forEach(function(d, i) {
         .attr("id", d.code)
         .attr("d", line(d.xy))
         .style("stroke", color[i])
-
     legend = document.getElementById('legend');
     legend.innerHTML += '<div><span class="emdash" style="color:'+d.color+'">&#8213;&nbsp;</span>' + d.code+ '&nbsp;&nbsp;</div>';
 });
+
+svg.append("text")
+    .attr("id", "N")
+    .attr("y", 5)
+    .attr("x", 0.85*width)
+    .style("font-size", "1.2rem")
+    .attr('text-anchor', 'middle')
+    .text("N={{ N }}");
 
 document.getElementById("sim-5").addEventListener("click", function(){
     this.disabled=true;
@@ -202,45 +202,20 @@ document.getElementById("sim-10").addEventListener("click", function(){
     );
     window.location.href = "/dashboard";
 });
-// animBeta([data1,data2,data3])
-
-// function animBeta(dataset) {
-//     // Takes in array of data 
-//     for(i=1; i< dataset.length; i++) {
-
-//         var path = d3.selectAll(".line").transition()
-//             .delay(i*500)
-//             .duration(500)
-//             .attr("class", "line")
-//             .attr("id", "A")
-//             .attr("d", line(dataset[i]));
-
-//     }
-// }
-function getCookie (name) {
-  var value = '; ' + document.cookie
-  var parts = value.split('; ' + name + '=')
-  if (parts.length === 2) {
-    return parts
-      .pop()
-      .split(';')
-      .shift()
-  }
-}
 function simPageVisits(campaign_code, n, conversion_rates, algo) {
+  
+  // AJAX API POST request to simulate n number of page visits
 
   conversion_rates = typeof conversion_rates !== 'undefined' ? conversion_rates : {};
-  console.log(campaign_code, n, conversion_rates, algo)
-  var xhttp = new XMLHttpRequest()
+  var xhttp = new XMLHttpRequest();
   xhttp.onreadystatechange = function () {
     if (this.readyState === 4 && this.status === 200) {
-      response = JSON.parse(this.response)
-      console.log(response)
+      var response = JSON.parse(this.response);
     }
   }
-  xhttp.open('POST', '/api/sim_page_views', true)
-  xhttp.setRequestHeader('Content-Type', 'application/json')
-  xhttp.setRequestHeader('X-CSRFToken', getCookie('csrftoken'))
+  xhttp.open('POST', '/api/sim_page_views', true);
+  xhttp.setRequestHeader('Content-Type', 'application/json');
+  xhttp.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
   xhttp.send(
     JSON.stringify({
       campaign_code : campaign_code,
@@ -248,8 +223,7 @@ function simPageVisits(campaign_code, n, conversion_rates, algo) {
       conversion_rates : conversion_rates,
       algo : algo,
     })
-  )
+  );
 }
-
 </script>
 {% endblock %}

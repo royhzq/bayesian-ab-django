@@ -40,9 +40,6 @@ class Campaign(models.Model):
     def __str__(self):
         return f'AB Test Campaign: {self.code}, {self.name}'
 
-# Stopping date
-# Max observations
-
 class Variant(models.Model):
 
     ''' Model to store variants (treatments)
@@ -79,7 +76,6 @@ class Variant(models.Model):
         null=True,
         help_text='Path to HTML template for variant View'
     )
-
     def beta_pdf(self, x_vals):
         # Get beta distribution values given corresponding X values where 0 < X <1
         # Where alpha = conversions and beta = impressions - conversions 

@@ -145,8 +145,6 @@ def experiment(p1, p2, p3, N=10000, algo="thompson", eps=0.2  ):
     
     """
 
-
-
     A = SimVariant(p=p1)
     B = SimVariant(p=p2)
     C = SimVariant(p=p3)

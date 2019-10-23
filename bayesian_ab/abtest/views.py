@@ -46,12 +46,14 @@ def dashboard(request):
     x_vals = list(np.linspace(0,1,500))
     xy_vals = []
     max_y = 0
+    N = 0 # Total number of page visits
     for i, variant in enumerate(campaign.variants.all().order_by('code')):
         y_vals = variant.beta_pdf(x_vals)
         variant_vals[i]['xy'] = list(zip(x_vals, y_vals))
         variant_vals[i]['color'] = settings.COLOUR_PALETTE[i%len(settings.COLOUR_PALETTE)]
         if max(y_vals) > max_y:
             max_y = max(y_vals)
+        N += variant_vals[i]['impressions'] 
 
     # Calculate pairwise probability of variant X conversion rate
     # greater than variant Y conversion rate
@@ -98,6 +100,7 @@ def dashboard(request):
         'variant_vals':variant_vals,
         'x_vals': json.dumps(x_vals),
         'max_y':max_y,
+        'N':N,
         'h_ab':h_ab,
         'h_ac':h_ac,
         'h_ba':h_ba,

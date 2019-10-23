@@ -7,13 +7,64 @@
     <title>{% block title %}Bayesian AB Testing in Django{% endblock %}</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l+B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd+qj+o24G5ZU2zJz" crossorigin="anonymous"></script>
-     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq" crossorigin="anonymous">
+    <script>
+        function getCookie (name) {
+          var value = '; ' + document.cookie;
+          var parts = value.split('; ' + name + '=');
+          if (parts.length === 2) {
+            return parts
+              .pop()
+              .split(';')
+              .shift()
+          }
+        }
+        function submitResponseAB(campaign_code, variant_code, 
+          register_impression, register_conversion, params){
 
+          // AJAX Post API call function to submit response
+          // To register if an impression or a conversion has been made
+
+          var params = typeof params !== 'undefined' ? params : {};
+          var xhttp = new XMLHttpRequest();
+          xhttp.onreadystatechange = function () {
+            if (this.readyState === 4 && this.status === 200) {
+              var response = JSON.parse(this.response);
+            }
+          }
+          xhttp.open('POST', '/api/experiment/response', true);
+          xhttp.setRequestHeader('Content-Type', 'application/json');
+          xhttp.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+          xhttp.send(
+            JSON.stringify({
+              campaign_code : campaign_code,
+              variant_code : variant_code,
+              register_impression : register_impression,
+              register_conversion : register_conversion,
+              params : params,
+            })
+          );
+        }
+        function addToCart(variant_code) {
+            // Assuming clicking the add to cart function is deemed a conversion
+            // ...Regular code goes here...
+            
+            // Register a conversion 
+            submitResponseAB('{{ campaign.code }}', variant_code, false, true);
+            window.location.href = "/";
+        }
+    </script>
+    <script>
+        // Render Katex
+        var math = document.getElementsByClassName('math');
+        for (var i = 0; i < math.length; i++) {
+            katex.render(math[i].innerText, math[i]);
+        }
+    </script>
     <style type="text/css">
         :root {
             box-sizing: border-box;
         };
-
         *,
         ::before,
         ::after {
@@ -114,7 +165,6 @@
             padding: 5px;
             margin-top:1em;
         }
-
     </style>
 </head>
 
@@ -122,15 +172,13 @@
     <div class="container">
         {% block header %}
         <header>
-                <h1>Bayesian AB Testing</h1>
+            <h1>Bayesian AB Testing</h1>
         </header>
         {% endblock %}
         <main>
-        {% block content %}
-
-        <!-- Main content goes here -->
-
-        {% endblock %}
+            {% block content %}
+            <!-- Main content goes here -->
+            {% endblock %}
         </main>
         {% block footer %}
         <footer>
@@ -139,11 +187,4 @@
         {% endblock %}
     </div>
 </body>
-<script type="text/javascript">
-    // Render Katex
-    var math = document.getElementsByClassName('math');
-    for (var i = 0; i < math.length; i++) {
-        katex.render(math[i].innerText, math[i]);
-    }
-</script>
 </html>

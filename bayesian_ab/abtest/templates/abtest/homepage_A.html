@@ -18,7 +18,7 @@
     To register a <em>Conversion</em>, click the Add To Cart button below. Doing so will increment conversions for this version by +1 and refresh this page. This is to simulate the metric which we are trying to increase, or test for. In this case, we are measuring to see which version of the page will result in more <i>Add To Cart</i> events.
 </p>
 <div class="center">
-  <button class="add-to-cart" onclick="this.disabled=true;addToCart();">Add To Cart <br> (+1 Conversion)</button>
+  <button class="add-to-cart" onclick="this.disabled=true;addToCart('A');">Add To Cart <br> (+1 Conversion)</button>
 </div>
 <div class="center">
     <a href="/">Reload Page</a>
@@ -51,50 +51,10 @@
 <p>User Session Key: {{ session_key }}</p>
 <br>
 <script>
-
-function getCookie (name) {
-  var value = '; ' + document.cookie
-  var parts = value.split('; ' + name + '=')
-  if (parts.length === 2) {
-    return parts
-      .pop()
-      .split(';')
-      .shift()
-  }
-}
-function submitResponseAB(campaign_code, variant_code, register_impression, register_conversion, params){
-
-  params = typeof params !== 'undefined' ? params : {};
-  console.log(campaign_code, variant_code, register_impression, register_conversion, params)
-  var xhttp = new XMLHttpRequest()
-  xhttp.onreadystatechange = function () {
-    if (this.readyState === 4 && this.status === 200) {
-      response = JSON.parse(this.response)
-      console.log(response)
-    }
-  }
-  xhttp.open('POST', '/api/experiment/response', true)
-  xhttp.setRequestHeader('Content-Type', 'application/json')
-  xhttp.setRequestHeader('X-CSRFToken', getCookie('csrftoken'))
-  xhttp.send(
-    JSON.stringify({
-      campaign_code : campaign_code,
-      variant_code : variant_code,
-      register_impression : register_impression,
-      register_conversion : register_conversion,
-      params : params,
-    })
-  )
-}
-function addToCart() {
-    
-    submitResponseAB('{{ campaign.code }}', 'A', false, true);
-    window.location.href = "/";
-}
-
-console.log('Submitting Response')
-submitResponseAB('{{ campaign.code }}', 'A', true, false)
-
+  document.addEventListener("DOMContentLoaded", function(event) { 
+    // Register an impression only when DOM content is loaded
+    submitResponseAB('{{ campaign.code }}', 'A', true, false)
+  });
 </script>
 {% endblock %}
 {% block footer %}
