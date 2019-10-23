@@ -157,7 +157,7 @@ legend.innerHTML += '<div><span class="emdash" style="color:'+color[0]+'">&#8213
 legend.innerHTML += '<div><span class="emdash" style="color:'+color[1]+'">&#8213;&nbsp;</span>Variant B&nbsp;&nbsp;</div>';
 legend.innerHTML += '<div><span class="emdash" style="color:'+color[2]+'">&#8213;&nbsp;</span>Variant C&nbsp;&nbsp;</div>';
 
-document.getElementById("rangeSlider").addEventListener("click", function(){
+document.getElementById("rangeSlider").addEventListener("change", function(){
     this.disabled=true;
     updatePosterior(dataset[this.value-1]);
     this.disabled = false;
