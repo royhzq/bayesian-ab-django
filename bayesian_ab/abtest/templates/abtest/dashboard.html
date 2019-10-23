@@ -186,7 +186,6 @@ document.getElementById("sim-5").addEventListener("click", function(){
         },
         algo='thompson'
     );
-    window.location.href = "/dashboard";
 });
 document.getElementById("sim-10").addEventListener("click", function(){
     this.disabled=true;
@@ -200,7 +199,6 @@ document.getElementById("sim-10").addEventListener("click", function(){
         },
         algo='thompson'
     );
-    window.location.href = "/dashboard";
 });
 function simPageVisits(campaign_code, n, conversion_rates, algo) {
   
@@ -211,6 +209,7 @@ function simPageVisits(campaign_code, n, conversion_rates, algo) {
   xhttp.onreadystatechange = function () {
     if (this.readyState === 4 && this.status === 200) {
       var response = JSON.parse(this.response);
+      window.location.href = "/dashboard";
     }
   }
   xhttp.open('POST', '/api/sim_page_views', true);

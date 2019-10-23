@@ -54,13 +54,6 @@
             window.location.href = "/";
         }
     </script>
-    <script>
-        // Render Katex
-        var math = document.getElementsByClassName('math');
-        for (var i = 0; i < math.length; i++) {
-            katex.render(math[i].innerText, math[i]);
-        }
-    </script>
     <style type="text/css">
         :root {
             box-sizing: border-box;
@@ -182,7 +175,13 @@
         </main>
         {% block footer %}
         <footer>
-
+            <script>
+                // Render Katex
+                var math = document.getElementsByClassName('math');
+                for (var i = 0; i < math.length; i++) {
+                    katex.render(math[i].innerText, math[i]);
+                }
+            </script>
         </footer>
         {% endblock %}
     </div>

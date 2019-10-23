@@ -1,5 +1,4 @@
 from django.shortcuts import render, redirect
-from django.conf import settings
 from .utils import ab_assign, h, sim_page_visits
 from .simulation import experiment
 from .models import Campaign, Variant
@@ -47,10 +46,18 @@ def dashboard(request):
     xy_vals = []
     max_y = 0
     N = 0 # Total number of page visits
+    COLOUR_PALETTE = [
+        '#66c2a5',
+        '#fc8d62',
+        '#8da0cb',
+        '#e78ac3',
+        '#a6d854',
+    ]
+
     for i, variant in enumerate(campaign.variants.all().order_by('code')):
         y_vals = variant.beta_pdf(x_vals)
         variant_vals[i]['xy'] = list(zip(x_vals, y_vals))
-        variant_vals[i]['color'] = settings.COLOUR_PALETTE[i%len(settings.COLOUR_PALETTE)]
+        variant_vals[i]['color'] = COLOUR_PALETTE[i%len(COLOUR_PALETTE)]
         if max(y_vals) > max_y:
             max_y = max(y_vals)
         N += variant_vals[i]['impressions'] 
