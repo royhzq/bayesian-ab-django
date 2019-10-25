@@ -9,11 +9,11 @@ from .simulation import experiment
 
 class ABResponse(APIView):
 
-    ''' API to collect responses from users.
+    """ API to collect responses from users.
     This API registers the impressions generated from page views 
     and is also used to register conversions.
     AJAX call to be made using Javascript in the A/B test page. 
-    '''
+    """
 
     def post(self, request, format=None):
 
