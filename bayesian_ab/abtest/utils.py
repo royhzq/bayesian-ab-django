@@ -76,26 +76,6 @@ def ab_assign(request, campaign, default_template,
         'html_template':'abtest/homepage_A.html'
     }
     """
-
-    ''' Function to assign user a variant based
-    on latest updated distribution. Choice of algorithm includes:
-        - Epsilon-Greedy (egreedy)
-        - UCB1 (ucb1)
-        - Thompson Sampling (thompson)
-    '''
-    code = str(campaign.code)
-    # Sticky session - User gets previously assigned template
-    if request.session.get(code):
-        if request.session.get(code).get('html_template') and sticky_session:
-           return request.session.get(code).get('html_template', default_template)
-    else:
-        # Register new session variable
-        request.session[code] = {
-            'html_template': '',
-            'i': 1, # Session impressions
-            'c': 0, # Session conversions
-        }
-
     variants = campaign.variants.all().values(
         'code',
         'impressions',
@@ -103,6 +83,19 @@ def ab_assign(request, campaign, default_template,
         'conversion_rate',
         'html_template',
     ) 
+
+    # Sticky sessions - User gets previously assigned template
+    campaign_code = str(campaign.code)
+    if request.session.get(campaign_code):
+        if request.session.get(campaign_code).get('code') and sticky_session:
+           return request.session.get(campaign_code)
+    else:
+        # Register new session variable
+        request.session[campaign_code] = {
+            'i': 1, # Session impressions
+            'c': 0, # Session conversions
+        }
+
     if algo == 'thompson':
         assigned_variant = thompson_sampling(variants)
     if algo == 'egreedy':
@@ -112,8 +105,11 @@ def ab_assign(request, campaign, default_template,
     if algo == 'uniform':
         assigned_variant = random.sample(list(variants), 1)[0]
 
-    # Record assigned template as session variable
-    request.session[code]['html_template'] = assigned_variant['html_template']
+    # Record assigned template in session variable
+    request.session[campaign_code] = {
+        **request.session[campaign_code], 
+        **assigned_variant 
+    }
     request.session.modified = True
 
     return assigned_variant

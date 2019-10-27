@@ -2,8 +2,8 @@ from rest_framework import serializers
 
 class ABResponseSerializer(serializers.Serializer):
 
-    campaign_code = serializers.CharField() 
-    variant_code = serializers.CharField()
+    campaign_code = serializers.CharField(max_length=36) 
+    variant_code = serializers.CharField(max_length=32)
     register_impression = serializers.BooleanField()
     register_conversion = serializers.BooleanField()
     params = serializers.JSONField(required=False)

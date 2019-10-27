@@ -4,8 +4,6 @@ import scipy.stats
 from django.utils import timezone
 from django.db import models
 
-# Create your models here.
-
 class Campaign(models.Model):
 
     ''' Record for AB Tests conducted
@@ -81,8 +79,8 @@ class Variant(models.Model):
         # Where alpha = conversions and beta = impressions - conversions 
         y_vals = list(scipy.stats.beta.pdf(
             x_vals, 
-            max(self.conversions,1),
-            max(self.impressions-self.conversions,1)
+            max(self.conversions, 1),
+            max(self.impressions-self.conversions, 1)
             )
         )
         return y_vals
