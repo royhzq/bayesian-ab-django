@@ -4,7 +4,9 @@ This application is an implementation of A/B testing for Django projects. The **
 
 You may try this out at the project's demo at [https://royhung.com/abtest/](https://royhung.com/abtest/)  The demo is a showcase of bayesian A/B testing on a [target page](https://royhung.com/abtest/), which, when visited will serve the user one of three versions (A/B/C) of the page. The goal is to find out which version has the highest clickthrough rate on the *Add To Cart* button. 
 
-You may view the results for the demo A/B/C test at [https://royhung.com/abtest/dashboard](https://royhung.com/abtest/dashboard)
+You may view the results for the demo A/B/C test at [https://royhung.com/abtest/dashboard](https://royhung.com/abtest/dashboard)  
+
+For more details on bayesian A/B testing in Django, visit [https://royhung.com/bayesian-ab-testing](https://royhung.com/bayesian-ab-testing). 
 
 ## Quickstart
 
